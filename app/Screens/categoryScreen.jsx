@@ -1,41 +1,39 @@
 import {
-  FlatList,
   StyleSheet,
   View,
+  FlatList,
   ActivityIndicator,
   Text,
 } from "react-native";
 import React, { useEffect, useState } from "react";
-import Header from "../../components/Header";
+import { useLocalSearchParams } from "expo-router";
 import ImageCard from "../../components/ImageCard";
-import { StatusBar } from "expo-status-bar";
 
 const API_URL = "https://horizonwalls-server.vercel.app/api/wallpapers";
 
-const Home = () => {
+const CategoryDetails = () => {
+  const { id, name } = useLocalSearchParams();
   const [wallpapers, setWallpapers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchWallpapers = async () => {
+    const fetchCategoryWallpapers = async () => {
       try {
-        console.log("Fetching wallpapers...");
-        const response = await fetch(API_URL);
+        console.log("Fetching wallpapers for category:", id);
+        const response = await fetch(`${API_URL}?category=${id}`);
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
-        console.log("Fetched Data:", data);
+        console.log("Fetched Wallpapers:", data);
 
-        // Check if the response has the expected structure
         if (!data.success || !Array.isArray(data.wallpapers)) {
           throw new Error("Invalid data structure received from API");
         }
 
-        // Set the wallpapers array from the nested structure
         setWallpapers(data.wallpapers);
       } catch (error) {
         console.error("Error fetching wallpapers:", error);
@@ -45,8 +43,8 @@ const Home = () => {
       }
     };
 
-    fetchWallpapers();
-  }, []);
+    fetchCategoryWallpapers();
+  }, [id]);
 
   if (loading) {
     return (
@@ -66,17 +64,16 @@ const Home = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="dark" />
-      <Header />
+      <Text style={styles.title}>{name}</Text>
       <FlatList
         data={wallpapers}
         keyExtractor={(item) => item._id}
-        renderItem={({ item }) => {
-          console.log("Rendering image:", item.image, "name:", item.name);
-          return <ImageCard imageUrl={item.image} wallpaperName={item.name} />;
-        }}
+        renderItem={({ item }) => (
+          <ImageCard imageUrl={item.image} wallpaperName={item.name} />
+        )}
         numColumns={2}
         contentContainerStyle={styles.listContainer}
+        showsVerticalScrollIndicator={false}
       />
     </View>
   );
@@ -86,10 +83,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "white",
+    paddingTop: 60,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "bold",
+    marginHorizontal: 20,
+    marginBottom: 15,
+    color: "#1a1a1a",
   },
   listContainer: {
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+    padding: 15,
   },
   loader: {
     flex: 1,
@@ -108,4 +112,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Home;
+export default CategoryDetails;

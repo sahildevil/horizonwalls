@@ -1,8 +1,10 @@
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import React from "react";
 import Feather from "@expo/vector-icons/Feather";
+import { useRouter } from "expo-router";
 
 const Header = () => {
+  const router = useRouter();
   return (
     <View style={styles.container}>
       <Feather name="menu" size={24} color="black" />
@@ -11,7 +13,13 @@ const Header = () => {
         source={require("../assets/images/logo.png")}
         style={styles.applogo}
       /> */}
-      <Feather name="search" size={24} color="black" />
+      <TouchableOpacity
+        onPress={() => {
+          router.push("/SearchScreen");
+        }}
+      >
+        <Feather name="search" size={24} color="black" />
+      </TouchableOpacity>
     </View>
   );
 };
@@ -24,7 +32,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     paddingHorizontal: 10,
-    paddingVertical: 10,
+    paddingTop: 40,
   },
   applogo: {
     width: 50,
