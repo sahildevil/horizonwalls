@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  PermissionsAndroid,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { StatusBar } from "expo-status-bar";
@@ -16,14 +17,60 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { BlurView } from "expo-blur";
 import * as FileSystem from "expo-file-system";
 import * as MediaLibrary from "expo-media-library";
-
+import AntDesign from "@expo/vector-icons/AntDesign";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import ManageWallpaper, { TYPE } from "react-native-manage-wallpaper";
 const { width, height } = Dimensions.get("window");
 
 const Screens = () => {
   const params = useLocalSearchParams();
+  const [isFavorite, setIsFavorite] = useState(false);
   const [decodedUrl, setDecodedUrl] = useState(null);
   const [wallpaperName, setWallpaperName] = useState(null);
   const router = useRouter();
+  useEffect(() => {
+    // Check if wallpaper is in favorites when component mounts
+    checkFavorite();
+  }, [decodedUrl]);
+  const checkFavorite = async () => {
+    try {
+      const favorites = await AsyncStorage.getItem("favorites");
+      const favoritesArray = favorites ? JSON.parse(favorites) : [];
+      setIsFavorite(favoritesArray.some((fav) => fav.imageUrl === decodedUrl));
+    } catch (error) {
+      console.error("Error checking favorite:", error);
+    }
+  };
+  const toggleFavorite = async () => {
+    try {
+      const favorites = await AsyncStorage.getItem("favorites");
+      const favoritesArray = favorites ? JSON.parse(favorites) : [];
+
+      if (isFavorite) {
+        // Remove from favorites
+        const newFavorites = favoritesArray.filter(
+          (fav) => fav.imageUrl !== decodedUrl
+        );
+        await AsyncStorage.setItem("favorites", JSON.stringify(newFavorites));
+        setIsFavorite(false);
+        Alert.alert("Removed from favorites");
+      } else {
+        // Add to favorites
+        const newFavorite = {
+          imageUrl: decodedUrl,
+          name: wallpaperName,
+          addedAt: new Date().toISOString(),
+        };
+        const newFavorites = [...favoritesArray, newFavorite];
+        await AsyncStorage.setItem("favorites", JSON.stringify(newFavorites));
+        setIsFavorite(true);
+        Alert.alert("Added to favorites");
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+      Alert.alert("Error", "Failed to update favorites");
+    }
+  };
 
   useEffect(() => {
     if (params.imageUrl) {
@@ -106,6 +153,100 @@ const Screens = () => {
     }
   };
 
+  const wallpaperCallback = (res) => {
+    console.log("Wallpaper Response:", res);
+    if (res.status === "success") {
+      Alert.alert("Success", "Wallpaper set successfully!");
+    } else {
+      Alert.alert("Error", "Failed to set wallpaper");
+    }
+  };
+
+  const setWallpaper = async () => {
+    if (!decodedUrl) return;
+
+    try {
+      // Request storage permissions for Android
+      if (Platform.OS === "android") {
+        const permission = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE
+        );
+        if (permission !== "granted") {
+          Alert.alert(
+            "Permission Denied",
+            "Please grant storage permission to set wallpaper."
+          );
+          return;
+        }
+      }
+
+      // First download the image
+      const filename = `temp_wallpaper_${Date.now()}.${getFileExtension(
+        decodedUrl
+      )}`;
+      const fileUri = `${FileSystem.documentDirectory}${filename}`;
+
+      // Download image
+      const { uri } = await FileSystem.downloadAsync(decodedUrl, fileUri);
+
+      // Save to media library
+      const asset = await MediaLibrary.createAssetAsync(uri);
+
+      try {
+        const album = await MediaLibrary.getAlbumAsync("HorizonWalls");
+        if (album === null) {
+          await MediaLibrary.createAlbumAsync("HorizonWalls", asset, false);
+        } else {
+          await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
+        }
+
+        // Guide user to set wallpaper through system settings
+        Alert.alert(
+          "Wallpaper Downloaded",
+          "The image has been saved to your gallery. Would you like to set it as wallpaper?",
+          [
+            {
+              text: "Set Wallpaper",
+              onPress: async () => {
+                if (Platform.OS === "android") {
+                  try {
+                    await Linking.sendIntent(
+                      "android.intent.action.SET_WALLPAPER"
+                    );
+                  } catch (error) {
+                    console.error("Failed to open wallpaper settings:", error);
+                    Alert.alert(
+                      "Manual Setup Required",
+                      "Please go to your device settings to set the wallpaper."
+                    );
+                  }
+                } else {
+                  Alert.alert(
+                    "Set Wallpaper",
+                    "Please go to your device settings to set the wallpaper."
+                  );
+                }
+              },
+            },
+            {
+              text: "Cancel",
+              style: "cancel",
+            },
+          ]
+        );
+      } catch (error) {
+        console.error("Album error:", error);
+        Alert.alert("Error", "Failed to save wallpaper");
+      }
+
+      // Clean up temporary file
+      await FileSystem.deleteAsync(fileUri);
+    } catch (error) {
+      console.error("Wallpaper setup error:", error);
+      Alert.alert("Error", "Failed to prepare wallpaper");
+    }
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar translucent style="auto" />
@@ -124,8 +265,16 @@ const Screens = () => {
         <TouchableOpacity onPress={downloadImage}>
           <Feather name="download" size={24} color="white" />
         </TouchableOpacity>
-        <MaterialIcons name="now-wallpaper" size={24} color="white" />
-        <Feather name="heart" size={24} color="white" />
+        <TouchableOpacity onPress={setWallpaper}>
+          <MaterialIcons name="now-wallpaper" size={24} color="white" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={toggleFavorite}>
+          <AntDesign
+            name={isFavorite ? "heart" : "hearto"}
+            size={24}
+            color={isFavorite ? "#ff4757" : "white"}
+          />
+        </TouchableOpacity>
       </BlurView>
     </View>
   );

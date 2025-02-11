@@ -10,7 +10,11 @@ import Header from "../../components/Header";
 import ImageCard from "../../components/ImageCard";
 import { StatusBar } from "expo-status-bar";
 
-const API_URL = "https://horizonwalls-server.vercel.app/api/wallpapers";
+// const API_URL = "https://horizonwalls-server.vercel.app/api/wallpapers";
+// Change the API URL to local development server
+// const API_URL = "http://localhost:8000/api/wallpapers";
+// Replace localhost with your computer's IP address
+const API_URL = "http://192.168.1.11:8000/api/wallpapers"; // Replace X with your actual IP
 
 const Home = () => {
   const [wallpapers, setWallpapers] = useState([]);

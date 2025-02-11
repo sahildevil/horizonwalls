@@ -9,7 +9,7 @@ import React, { useEffect, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
 import ImageCard from "../../components/ImageCard";
 
-const API_URL = "https://horizonwalls-server.vercel.app/api/wallpapers";
+const API_URL = "http://192.168.1.11:8000/api/wallpapers";
 
 const CategoryDetails = () => {
   const { id, name } = useLocalSearchParams();
@@ -21,10 +21,20 @@ const CategoryDetails = () => {
     const fetchCategoryWallpapers = async () => {
       try {
         console.log("Fetching wallpapers for category:", id);
-        const response = await fetch(`${API_URL}?category=${id}`);
+        const response = await fetch(`${API_URL}?category=${id}`, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        });
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          const errorData = await response.json().catch(() => null);
+          console.error("Server Error Details:", errorData);
+          throw new Error(
+            errorData?.error || `HTTP error! status: ${response.status}`
+          );
         }
 
         const data = await response.json();
@@ -35,6 +45,7 @@ const CategoryDetails = () => {
         }
 
         setWallpapers(data.wallpapers || []);
+        setError(null);
       } catch (error) {
         console.error("Error fetching wallpapers:", error);
         setError(error.message);
