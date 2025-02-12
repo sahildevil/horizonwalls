@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "471881998741",
+    "project_id": "horizonwallst",
+    "storage_bucket": "horizonwallst.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:471881998741:android:e46a42746a88376f08569c",
+        "android_client_info": {
+          "package_name": "com.horizonwalls.sahil"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAbLxeDb7hb6MmJDREv5WYZHt4OKppD3Wk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

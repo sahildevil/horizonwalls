@@ -56,7 +56,7 @@ const Favs = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Favorite Wallpapers</Text>
+      <Text style={styles.title}>Favourite Wallpapers</Text>
       {favorites.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>No favorite wallpapers yet</Text>

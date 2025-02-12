@@ -3,9 +3,11 @@ import React, { useState } from "react";
 import Feather from "@expo/vector-icons/Feather";
 import { useRouter } from "expo-router";
 import Modal from "react-native-modal";
+import { useAuth } from "../context/AuthContext";  // Add this import
 
 const Header = () => {
   const router = useRouter();
+  const { user, signOut } = useAuth();  // Add this line
   const [isMenuVisible, setIsMenuVisible] = useState(false);
 
   const toggleMenu = () => setIsMenuVisible(!isMenuVisible);
@@ -44,7 +46,16 @@ const Header = () => {
       >
         <View style={styles.menuContainer}>
           <View style={styles.menuHeader}>
-            <Text style={styles.menuTitle}>Menu</Text>
+            {user && (
+              <View style={styles.userInfo}>
+                <Image
+                  source={{ uri: user.picture }}
+                  style={styles.userAvatar}
+                />
+                <Text style={styles.userName}>{user.name}</Text>
+                <Text style={styles.userEmail}>{user.email}</Text>
+              </View>
+            )}
             <TouchableOpacity onPress={toggleMenu}>
               <Feather name="x" size={24} color="black" />
             </TouchableOpacity>
@@ -63,6 +74,19 @@ const Header = () => {
               <Text style={styles.menuItemText}>{item.label}</Text>
             </TouchableOpacity>
           ))}
+
+          {/* Add Logout Button */}
+          <TouchableOpacity
+            style={[styles.menuItem, styles.logoutButton]}
+            onPress={async () => {
+              await signOut();
+              toggleMenu();
+              router.replace("/login");
+            }}
+          >
+            <Feather name="log-out" size={20} color="red" />
+            <Text style={[styles.menuItemText, styles.logoutText]}>Logout</Text>
+          </TouchableOpacity>
         </View>
       </Modal>
     </View>
@@ -117,5 +141,36 @@ const styles = StyleSheet.create({
   menuItemText: {
     fontSize: 16,
     marginLeft: 15,
+  },
+  userInfo: {
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    width: '100%',
+  },
+  userAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginBottom: 10,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  userEmail: {
+    fontSize: 14,
+    color: '#666',
+  },
+  logoutButton: {
+    marginTop: 'auto',
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+  logoutText: {
+    color: 'red',
   },
 });

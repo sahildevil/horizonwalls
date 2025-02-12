@@ -161,91 +161,91 @@ const Screens = () => {
       Alert.alert("Error", "Failed to set wallpaper");
     }
   };
+  const setWallpaper = () => {};
+  // const setWallpaper = async () => {
+  //   if (!decodedUrl) return;
 
-  const setWallpaper = async () => {
-    if (!decodedUrl) return;
+  //   try {
+  //     // Request storage permissions for Android
+  //     if (Platform.OS === "android") {
+  //       const permission = await PermissionsAndroid.request(
+  //         PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE
+  //       );
+  //       if (permission !== "granted") {
+  //         Alert.alert(
+  //           "Permission Denied",
+  //           "Please grant storage permission to set wallpaper."
+  //         );
+  //         return;
+  //       }
+  //     }
 
-    try {
-      // Request storage permissions for Android
-      if (Platform.OS === "android") {
-        const permission = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE
-        );
-        if (permission !== "granted") {
-          Alert.alert(
-            "Permission Denied",
-            "Please grant storage permission to set wallpaper."
-          );
-          return;
-        }
-      }
+  //     // First download the image
+  //     const filename = `temp_wallpaper_${Date.now()}.${getFileExtension(
+  //       decodedUrl
+  //     )}`;
+  //     const fileUri = `${FileSystem.documentDirectory}${filename}`;
 
-      // First download the image
-      const filename = `temp_wallpaper_${Date.now()}.${getFileExtension(
-        decodedUrl
-      )}`;
-      const fileUri = `${FileSystem.documentDirectory}${filename}`;
+  //     // Download image
+  //     const { uri } = await FileSystem.downloadAsync(decodedUrl, fileUri);
 
-      // Download image
-      const { uri } = await FileSystem.downloadAsync(decodedUrl, fileUri);
+  //     // Save to media library
+  //     const asset = await MediaLibrary.createAssetAsync(uri);
 
-      // Save to media library
-      const asset = await MediaLibrary.createAssetAsync(uri);
+  //     try {
+  //       const album = await MediaLibrary.getAlbumAsync("HorizonWalls");
+  //       if (album === null) {
+  //         await MediaLibrary.createAlbumAsync("HorizonWalls", asset, false);
+  //       } else {
+  //         await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
+  //       }
 
-      try {
-        const album = await MediaLibrary.getAlbumAsync("HorizonWalls");
-        if (album === null) {
-          await MediaLibrary.createAlbumAsync("HorizonWalls", asset, false);
-        } else {
-          await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
-        }
+  //       // Guide user to set wallpaper through system settings
+  //       Alert.alert(
+  //         "Wallpaper Downloaded",
+  //         "The image has been saved to your gallery. Would you like to set it as wallpaper?",
+  //         [
+  //           {
+  //             text: "Set Wallpaper",
+  //             onPress: async () => {
+  //               if (Platform.OS === "android") {
+  //                 try {
+  //                   await Linking.sendIntent(
+  //                     "android.intent.action.SET_WALLPAPER"
+  //                   );
+  //                 } catch (error) {
+  //                   console.error("Failed to open wallpaper settings:", error);
+  //                   Alert.alert(
+  //                     "Manual Setup Required",
+  //                     "Please go to your device settings to set the wallpaper."
+  //                   );
+  //                 }
+  //               } else {
+  //                 Alert.alert(
+  //                   "Set Wallpaper",
+  //                   "Please go to your device settings to set the wallpaper."
+  //                 );
+  //               }
+  //             },
+  //           },
+  //           {
+  //             text: "Cancel",
+  //             style: "cancel",
+  //           },
+  //         ]
+  //       );
+  //     } catch (error) {
+  //       console.error("Album error:", error);
+  //       Alert.alert("Error", "Failed to save wallpaper");
+  //     }
 
-        // Guide user to set wallpaper through system settings
-        Alert.alert(
-          "Wallpaper Downloaded",
-          "The image has been saved to your gallery. Would you like to set it as wallpaper?",
-          [
-            {
-              text: "Set Wallpaper",
-              onPress: async () => {
-                if (Platform.OS === "android") {
-                  try {
-                    await Linking.sendIntent(
-                      "android.intent.action.SET_WALLPAPER"
-                    );
-                  } catch (error) {
-                    console.error("Failed to open wallpaper settings:", error);
-                    Alert.alert(
-                      "Manual Setup Required",
-                      "Please go to your device settings to set the wallpaper."
-                    );
-                  }
-                } else {
-                  Alert.alert(
-                    "Set Wallpaper",
-                    "Please go to your device settings to set the wallpaper."
-                  );
-                }
-              },
-            },
-            {
-              text: "Cancel",
-              style: "cancel",
-            },
-          ]
-        );
-      } catch (error) {
-        console.error("Album error:", error);
-        Alert.alert("Error", "Failed to save wallpaper");
-      }
-
-      // Clean up temporary file
-      await FileSystem.deleteAsync(fileUri);
-    } catch (error) {
-      console.error("Wallpaper setup error:", error);
-      Alert.alert("Error", "Failed to prepare wallpaper");
-    }
-  };
+  //     // Clean up temporary file
+  //     await FileSystem.deleteAsync(fileUri);
+  //   } catch (error) {
+  //     console.error("Wallpaper setup error:", error);
+  //     Alert.alert("Error", "Failed to prepare wallpaper");
+  //   }
+  // };
 
   return (
     <View style={styles.container}>
