@@ -3,12 +3,29 @@ import React, { useState } from "react";
 import Feather from "@expo/vector-icons/Feather";
 import { useRouter } from "expo-router";
 import Modal from "react-native-modal";
+import { useAuth } from "@clerk/clerk-expo";
 
 const Header = () => {
   const router = useRouter();
+  const { signOut } = useAuth();
   const [isMenuVisible, setIsMenuVisible] = useState(false);
 
   const toggleMenu = () => setIsMenuVisible(!isMenuVisible);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      // Close menu first
+      toggleMenu();
+      // Then redirect
+      setTimeout(() => {
+        router.replace("/login");
+      }, 100);
+    } catch (error) {
+      console.error("Error signing out:", error.message);
+      Alert.alert("Error", "Failed to sign out. Please try again.");
+    }
+  };
 
   const menuItems = [
     { icon: "info", label: "About Us", onPress: () => console.log("About Us") },
@@ -22,6 +39,12 @@ const Header = () => {
       icon: "share-2",
       label: "Share App",
       onPress: () => console.log("Share App"),
+    },
+    {
+      icon: "log-out",
+      label: "Sign Out",
+      onPress: handleSignOut,
+      style: { borderBottomWidth: 0, marginTop: 'auto' }
     },
   ];
 
@@ -53,7 +76,7 @@ const Header = () => {
           {menuItems.map((item, index) => (
             <TouchableOpacity
               key={index}
-              style={styles.menuItem}
+              style={[styles.menuItem, item.style]}
               onPress={() => {
                 item.onPress();
                 toggleMenu();
@@ -117,5 +140,9 @@ const styles = StyleSheet.create({
   menuItemText: {
     fontSize: 16,
     marginLeft: 15,
+  },
+  signOutButton: {
+    marginTop: 'auto',
+    borderBottomWidth: 0,
   },
 });
