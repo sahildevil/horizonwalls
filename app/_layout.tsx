@@ -1,12 +1,13 @@
 import { Stack } from "expo-router";
 import { AuthProvider } from "../providers/auth";
-import mobileAds from 'react-native-google-mobile-ads';
-mobileAds()
-  .initialize()
-  .then(adapterStatuses => {
-    console.log('Initialization complete!');
-  });
+import { useEffect } from "react";
+import { initializeMobileAds } from "../config/mobileAds";
+
 export default function RootLayout() {
+  useEffect(() => {
+    initializeMobileAds();
+  }, []);
+
   return (
     <AuthProvider>
       <Stack screenOptions={{ headerShown: false }} initialRouteName="index">

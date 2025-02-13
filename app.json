@@ -18,8 +18,11 @@
       },
       "permissions": [
         "WRITE_EXTERNAL_STORAGE",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
         "READ_EXTERNAL_STORAGE"
-      ]
+      ],
+      "package": "com.sahil1302.horizonwalls"
     },
     "web": {
       "bundler": "metro",
@@ -41,7 +44,7 @@
         "react-native-google-mobile-ads",
         {
           "androidAppId": "ca-app-pub-4677981033286236~5504793911",
-          "iosAppId": null 
+          "iosAppId": null
         }
       ]
     ],

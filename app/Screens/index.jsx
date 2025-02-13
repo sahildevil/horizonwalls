@@ -2,11 +2,11 @@ import {
   StyleSheet,
   View,
   Image,
-  Dimensions,
   TouchableOpacity,
   Alert,
   Platform,
   PermissionsAndroid,
+  Linking,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { StatusBar } from "expo-status-bar";
@@ -19,13 +19,16 @@ import * as FileSystem from "expo-file-system";
 import * as MediaLibrary from "expo-media-library";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import ManageWallpaper, { TYPE } from "react-native-manage-wallpaper";
-import { RewardedAd, TestIds } from "react-native-google-mobile-ads";
+import {
+  RewardedAd,
+  TestIds,
+  AdEventType,
+  RewardedAdEventType,
+} from "react-native-google-mobile-ads";
 
-// Add this near your other constants
 const adUnitId = __DEV__
   ? TestIds.REWARDED
-  : "ca-app-pub-4677981033286236~5504793911"; // Replace with your actual ad unit ID
+  : "ca-app-pub-4677981033286236~5504793911";
 
 const rewarded = RewardedAd.createForAdRequest(adUnitId, {
   requestNonPersonalizedAdsOnly: true,
@@ -39,20 +42,46 @@ const Screens = () => {
   const [wallpaperName, setWallpaperName] = useState(null);
   const router = useRouter();
   const [loaded, setLoaded] = useState(false);
+  const [isRewarded, setIsRewarded] = useState(false);
 
   useEffect(() => {
-    // Check if wallpaper is in favorites when component mounts
     checkFavorite();
   }, [decodedUrl]);
 
   useEffect(() => {
-    const unsubscribeLoaded = rewarded.addAdEventListener("loaded", () => {
-      setLoaded(true);
-    });
-    const unsubscribeEarned = rewarded.addAdEventListener(
-      "earned_reward",
+    const unsubscribeLoaded = rewarded.addAdEventListener(
+      RewardedAdEventType.LOADED,
       () => {
-        handleDownload();
+        setLoaded(true);
+      }
+    );
+
+    const unsubscribeEarned = rewarded.addAdEventListener(
+      RewardedAdEventType.EARNED_REWARD,
+      (reward) => {
+        console.log("User earned reward:", reward);
+        setIsRewarded(true);
+      }
+    );
+
+    const unsubscribeClosed = rewarded.addAdEventListener(
+      AdEventType.CLOSED,
+      () => {
+        console.log("Ad closed");
+        if (isRewarded) {
+          handleDownload(); // ✅ Download wallpaper when ad is closed
+          setIsRewarded(false); // Reset reward state
+        }
+        setLoaded(false);
+        rewarded.load();
+      }
+    );
+
+    const unsubscribeFailedToLoad = rewarded.addAdEventListener(
+      AdEventType.ERROR,
+      (error) => {
+        console.error("Ad failed to load:", error);
+        setLoaded(false);
       }
     );
 
@@ -61,8 +90,10 @@ const Screens = () => {
     return () => {
       unsubscribeLoaded();
       unsubscribeEarned();
+      unsubscribeClosed();
+      unsubscribeFailedToLoad();
     };
-  }, []);
+  }, [isRewarded]); // ✅ Add `isRewarded` as a dependency
 
   const checkFavorite = async () => {
     try {
@@ -73,13 +104,13 @@ const Screens = () => {
       console.error("Error checking favorite:", error);
     }
   };
+
   const toggleFavorite = async () => {
     try {
       const favorites = await AsyncStorage.getItem("favorites");
       const favoritesArray = favorites ? JSON.parse(favorites) : [];
 
       if (isFavorite) {
-        // Remove from favorites
         const newFavorites = favoritesArray.filter(
           (fav) => fav.imageUrl !== decodedUrl
         );
@@ -87,7 +118,6 @@ const Screens = () => {
         setIsFavorite(false);
         Alert.alert("Removed from favorites");
       } else {
-        // Add to favorites
         const newFavorite = {
           imageUrl: decodedUrl,
           name: wallpaperName,
@@ -116,12 +146,10 @@ const Screens = () => {
   }, [params.imageUrl, params.name]);
 
   const sanitizeFileName = (name) => {
-    // Remove invalid characters and spaces
     return name.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
   };
 
   const getFileExtension = (url) => {
-    // Try to get extension from URL
     const urlExtension = url.split(".").pop().split(/[#?]/)[0];
     const validExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
 
@@ -129,7 +157,6 @@ const Screens = () => {
       return urlExtension.toLowerCase();
     }
 
-    // Default to png if no valid extension found
     return "png";
   };
 
@@ -141,11 +168,16 @@ const Screens = () => {
       return;
     }
 
-    rewarded.show();
+    try {
+      await rewarded.show();
+    } catch (error) {
+      console.error("Error showing ad:", error);
+      Alert.alert("Error", "Failed to show ad. Please try again.");
+    }
   };
 
   const handleDownload = async () => {
-    if (!decodedUrl) return;
+    if (!decodedUrl || !isRewarded) return;
 
     try {
       const extension = getFileExtension(decodedUrl);
@@ -154,51 +186,31 @@ const Screens = () => {
         : "wallpaper_" + new Date().getTime();
       const filename = `${baseFileName}.${extension}`;
 
-      console.log("Saving with filename:", filename);
+      console.log("Saving as:", filename);
 
-      const fileUri = `${FileSystem.documentDirectory}${filename}`;
+      // Define the final file path directly inside the "HorizonWalls" album
+      const directory = `${FileSystem.documentDirectory}HorizonWalls/`;
+      await FileSystem.makeDirectoryAsync(directory, { intermediates: true });
 
+      const fileUri = `${directory}${filename}`;
+
+      // Download image directly with correct name
       const { uri } = await FileSystem.downloadAsync(decodedUrl, fileUri);
 
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission Denied", "Allow access to save images.");
-        return;
-      }
-
-      const asset = await MediaLibrary.createAssetAsync(uri);
-
-      try {
-        const album = await MediaLibrary.getAlbumAsync("HorizonWalls");
-        if (album === null) {
-          await MediaLibrary.createAlbumAsync("HorizonWalls", asset, false);
-        } else {
-          await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
-        }
-      } catch (error) {
-        console.error("Album error:", error);
-      }
+      // Save directly to Media Library
+      await MediaLibrary.saveToLibraryAsync(uri);
 
       Alert.alert(
         "Download Complete",
-        `Wallpaper saved as "${filename}" in your gallery!`
+        `Wallpaper saved in the "HorizonWalls" folder!`
       );
-      console.log("Saved at:", uri);
 
-      // Reload ad for next download
-      rewarded.load();
+      console.log("Saved at:", uri);
+      setIsRewarded(false); // Reset reward state
     } catch (error) {
       console.error("Download error:", error);
       Alert.alert("Error", "Failed to download image.");
-    }
-  };
-
-  const wallpaperCallback = (res) => {
-    console.log("Wallpaper Response:", res);
-    if (res.status === "success") {
-      Alert.alert("Success", "Wallpaper set successfully!");
-    } else {
-      Alert.alert("Error", "Failed to set wallpaper");
+      setIsRewarded(false);
     }
   };
 
@@ -206,7 +218,6 @@ const Screens = () => {
     if (!decodedUrl) return;
 
     try {
-      // Request storage permissions for Android
       if (Platform.OS === "android") {
         const permission = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE
@@ -220,16 +231,13 @@ const Screens = () => {
         }
       }
 
-      // First download the image
       const filename = `temp_wallpaper_${Date.now()}.${getFileExtension(
         decodedUrl
       )}`;
       const fileUri = `${FileSystem.documentDirectory}${filename}`;
 
-      // Download image
       const { uri } = await FileSystem.downloadAsync(decodedUrl, fileUri);
 
-      // Save to media library
       const asset = await MediaLibrary.createAssetAsync(uri);
 
       try {
@@ -240,7 +248,6 @@ const Screens = () => {
           await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
         }
 
-        // Guide user to set wallpaper through system settings
         Alert.alert(
           "Wallpaper Downloaded",
           "The image has been saved to your gallery. Would you like to set it as wallpaper?",
@@ -279,7 +286,6 @@ const Screens = () => {
         Alert.alert("Error", "Failed to save wallpaper");
       }
 
-      // Clean up temporary file
       await FileSystem.deleteAsync(fileUri);
     } catch (error) {
       console.error("Wallpaper setup error:", error);
