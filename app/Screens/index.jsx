@@ -20,7 +20,17 @@ import * as MediaLibrary from "expo-media-library";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ManageWallpaper, { TYPE } from "react-native-manage-wallpaper";
-const { width, height } = Dimensions.get("window");
+import { RewardedAd, TestIds } from "react-native-google-mobile-ads";
+
+// Add this near your other constants
+const adUnitId = __DEV__
+  ? TestIds.REWARDED
+  : "ca-app-pub-4677981033286236~5504793911"; // Replace with your actual ad unit ID
+
+const rewarded = RewardedAd.createForAdRequest(adUnitId, {
+  requestNonPersonalizedAdsOnly: true,
+  keywords: ["wallpaper", "art", "design"],
+});
 
 const Screens = () => {
   const params = useLocalSearchParams();
@@ -28,10 +38,32 @@ const Screens = () => {
   const [decodedUrl, setDecodedUrl] = useState(null);
   const [wallpaperName, setWallpaperName] = useState(null);
   const router = useRouter();
+  const [loaded, setLoaded] = useState(false);
+
   useEffect(() => {
     // Check if wallpaper is in favorites when component mounts
     checkFavorite();
   }, [decodedUrl]);
+
+  useEffect(() => {
+    const unsubscribeLoaded = rewarded.addAdEventListener("loaded", () => {
+      setLoaded(true);
+    });
+    const unsubscribeEarned = rewarded.addAdEventListener(
+      "earned_reward",
+      () => {
+        handleDownload();
+      }
+    );
+
+    rewarded.load();
+
+    return () => {
+      unsubscribeLoaded();
+      unsubscribeEarned();
+    };
+  }, []);
+
   const checkFavorite = async () => {
     try {
       const favorites = await AsyncStorage.getItem("favorites");
@@ -102,10 +134,20 @@ const Screens = () => {
   };
 
   const downloadImage = async () => {
+    if (!loaded) {
+      Alert.alert("Ad not ready", "Please wait a moment and try again.", [
+        { text: "OK" },
+      ]);
+      return;
+    }
+
+    rewarded.show();
+  };
+
+  const handleDownload = async () => {
     if (!decodedUrl) return;
 
     try {
-      // Create filename using wallpaper name if available
       const extension = getFileExtension(decodedUrl);
       const baseFileName = wallpaperName
         ? sanitizeFileName(wallpaperName)
@@ -116,20 +158,16 @@ const Screens = () => {
 
       const fileUri = `${FileSystem.documentDirectory}${filename}`;
 
-      // Step 1: Download the Image
       const { uri } = await FileSystem.downloadAsync(decodedUrl, fileUri);
 
-      // Step 2: Request Media Library Permission
       const { status } = await MediaLibrary.requestPermissionsAsync();
       if (status !== "granted") {
         Alert.alert("Permission Denied", "Allow access to save images.");
         return;
       }
 
-      // Step 3: Save to Gallery
       const asset = await MediaLibrary.createAssetAsync(uri);
 
-      // Step 4: Create album and move asset (optional)
       try {
         const album = await MediaLibrary.getAlbumAsync("HorizonWalls");
         if (album === null) {
@@ -139,7 +177,6 @@ const Screens = () => {
         }
       } catch (error) {
         console.error("Album error:", error);
-        // Continue even if album creation fails
       }
 
       Alert.alert(
@@ -147,6 +184,9 @@ const Screens = () => {
         `Wallpaper saved as "${filename}" in your gallery!`
       );
       console.log("Saved at:", uri);
+
+      // Reload ad for next download
+      rewarded.load();
     } catch (error) {
       console.error("Download error:", error);
       Alert.alert("Error", "Failed to download image.");
@@ -288,11 +328,14 @@ const styles = StyleSheet.create({
     backgroundColor: "black",
   },
   image: {
-    width,
-    height,
+    flex: 1,
+    width: "100%",
+    height: "100%",
     position: "absolute",
     top: 0,
     left: 0,
+    right: 0,
+    bottom: 0,
   },
   backbutton: {
     marginLeft: 30,

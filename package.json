@@ -45,6 +45,7 @@
     "react-native": "0.76.6",
     "react-native-dotenv": "^3.4.11",
     "react-native-gesture-handler": "~2.20.2",
+    "react-native-google-mobile-ads": "^14.9.0",
     "react-native-manage-wallpaper": "^1.2.1",
     "react-native-modal": "^13.0.1",
     "react-native-reanimated": "~3.16.1",
