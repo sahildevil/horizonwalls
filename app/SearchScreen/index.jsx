@@ -89,8 +89,9 @@ const SearchScreen = () => {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.title}>Search</Text>
       <TextInput
-        style={styles.searchInput}
+        style={[styles.searchInput, searchQuery && styles.searchInputActive]}
         placeholder="Search wallpapers by name..."
         value={searchQuery}
         onChangeText={handleSearch}
@@ -131,8 +132,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    paddingTop: 60,
+    paddingTop: 40,
     paddingHorizontal: 16,
+  },
+  title: {
+    fontFamily: "Outfit-Bold",
+    fontSize: 28,
+    marginHorizontal: 10,
+    marginTop: 10,
+    marginBottom: 10,
+    color: "#1a1a1a",
   },
   searchInput: {
     height: 50,
@@ -143,6 +152,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontSize: 16,
     backgroundColor: "#f8f8f8",
+    fontFamily: "Outfit-Regular",
+  },
+  searchInputActive: {
+    borderColor: "#4285F4", // Google Blue accent color
+    borderWidth: 2,
   },
   wallpaperList: {
     paddingBottom: 20,
@@ -179,6 +193,7 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 12,
     textAlign: "center",
+    fontFamily: "Outfit-Medium",
   },
   centerContainer: {
     flex: 1,
@@ -189,10 +204,12 @@ const styles = StyleSheet.create({
     color: "red",
     fontSize: 16,
     textAlign: "center",
+    fontFamily: "Outfit-Regular",
   },
   noResultsText: {
     color: "#666",
     fontSize: 16,
     textAlign: "center",
+    fontFamily: "Outfit-Regular",
   },
 });

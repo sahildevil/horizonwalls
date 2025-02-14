@@ -110,6 +110,7 @@ const Screens = () => {
   const toggleFavorite = async () => {
     try {
       const favorites = await AsyncStorage.getItem("favorites");
+      console.log("Current favorites:", favorites); // Debug log
       const favoritesArray = favorites ? JSON.parse(favorites) : [];
 
       if (isFavorite) {
@@ -117,6 +118,7 @@ const Screens = () => {
           (fav) => fav.imageUrl !== decodedUrl
         );
         await AsyncStorage.setItem("favorites", JSON.stringify(newFavorites));
+        console.log("Updated favorites (removed):", newFavorites); // Debug log
         setIsFavorite(false);
         Alert.alert("Removed from favorites");
       } else {
@@ -127,6 +129,7 @@ const Screens = () => {
         };
         const newFavorites = [...favoritesArray, newFavorite];
         await AsyncStorage.setItem("favorites", JSON.stringify(newFavorites));
+        console.log("Updated favorites (added):", newFavorites); // Debug log
         setIsFavorite(true);
         Alert.alert("Added to favorites");
       }

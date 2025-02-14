@@ -66,7 +66,6 @@ const Categories = () => {
 
   return (
     <View style={styles.container}>
-      <Header />
       <Text style={styles.title}>Categories</Text>
       <FlatList
         data={categories}
@@ -92,12 +91,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "white",
+    paddingTop: 40,
   },
   title: {
+    fontFamily: "Outfit-Bold",
     fontSize: 28,
-    fontWeight: "bold",
     marginHorizontal: 20,
-    marginTop: 10, // Increased to account for header
+    marginTop: 10,
     marginBottom: 5,
     color: "#1a1a1a",
   },
@@ -116,6 +116,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   errorText: {
+    fontFamily: "Outfit-Regular",
     color: "red",
     textAlign: "center",
   },

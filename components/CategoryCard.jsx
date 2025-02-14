@@ -93,8 +93,8 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 20,
   },
   name: {
+    fontFamily: "Outfit-Bold",
     fontSize: 24,
-    fontWeight: "bold",
     color: "white",
     textShadowColor: "rgba(0, 0, 0, 0.75)",
     textShadowOffset: { width: -1, height: 1 },
@@ -108,6 +108,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   errorText: {
+    fontFamily: "Outfit-Regular",
     color: "#666",
     fontSize: 16,
   },

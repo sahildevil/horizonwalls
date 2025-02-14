@@ -44,7 +44,7 @@ const Header = () => {
       icon: "log-out",
       label: "Sign Out",
       onPress: handleSignOut,
-      style: { borderBottomWidth: 0, marginTop: 'auto' }
+      style: { borderBottomWidth: 0, marginTop: "auto" },
     },
   ];
 
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
   },
   heading: {
-    fontWeight: "bold",
+    fontFamily: "Outfit-Bold",
     fontSize: 24,
   },
   modal: {
@@ -127,8 +127,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   menuTitle: {
+    fontFamily: "Outfit-Bold",
     fontSize: 20,
-    fontWeight: "bold",
   },
   menuItem: {
     flexDirection: "row",
@@ -138,11 +138,12 @@ const styles = StyleSheet.create({
     borderBottomColor: "#eee",
   },
   menuItemText: {
+    fontFamily: "Outfit-Regular",
     fontSize: 16,
     marginLeft: 15,
   },
   signOutButton: {
-    marginTop: 'auto',
+    marginTop: "auto",
     borderBottomWidth: 0,
   },
 });

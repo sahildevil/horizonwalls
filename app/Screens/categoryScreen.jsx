@@ -4,46 +4,28 @@ import {
   FlatList,
   ActivityIndicator,
   Text,
+  Dimensions,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
 import ImageCard from "../../components/ImageCard";
 
 const API_URL = "http://192.168.1.11:8000/api/wallpapers";
+const { width } = Dimensions.get('window');
+const CARD_MARGIN = 8;
+const CONTAINER_PADDING = 10;
+const NUMBER_OF_COLUMNS = 2;
+
+// Calculate card width and height
+const CARD_WIDTH = (width - (CONTAINER_PADDING * 2) - (CARD_MARGIN * (NUMBER_OF_COLUMNS + 1))) / NUMBER_OF_COLUMNS;
+const CARD_HEIGHT = (CARD_WIDTH * 9) / 16;
+
 const CategoryDetails = () => {
   const { id, name } = useLocalSearchParams();
   const [wallpapers, setWallpapers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // useEffect(() => {
-  //   const fetchCategoryWallpapers = async () => {
-  //     try {
-  //       console.log("Fetching wallpapers for category:", id);
-  //       const response = await fetch(`${API_URL}?category=${id}`);
-
-  //       if (!response.ok) {
-  //         throw new Error(`HTTP error! status: ${response.status}`);
-  //       }
-
-  //       const data = await response.json();
-  //       console.log("Fetched Wallpapers:", data);
-
-  //       if (!data.success || !Array.isArray(data.wallpapers)) {
-  //         throw new Error("Invalid data structure received from API");
-  //       }
-
-  //       setWallpapers(data.wallpapers);
-  //     } catch (error) {
-  //       console.error("Error fetching wallpapers:", error);
-  //       setError(error.message);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   fetchCategoryWallpapers();
-  // }, [id]);
   useEffect(() => {
     const fetchCategoryWallpapers = async () => {
       try {
@@ -123,13 +105,15 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: "bold",
+    fontFamily: "Outfit-Bold",
     marginHorizontal: 20,
     marginBottom: 15,
     color: "#1a1a1a",
   },
   listContainer: {
-    padding: 15,
+    paddingHorizontal: CONTAINER_PADDING,
+    paddingVertical: CONTAINER_PADDING,
+    alignItems: 'center', // Center cards horizontally
   },
   loader: {
     flex: 1,
@@ -145,6 +129,7 @@ const styles = StyleSheet.create({
   errorText: {
     color: "red",
     textAlign: "center",
+    fontFamily: "Outfit-Regular",
   },
 });
 

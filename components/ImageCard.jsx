@@ -1,63 +1,3 @@
-// import {
-//   Image,
-//   StyleSheet,
-//   View,
-//   TouchableOpacity,
-//   Dimensions,
-// } from "react-native";
-// import React from "react";
-// import { useRouter } from "expo-router";
-
-// const { width } = Dimensions.get("window");
-// const cardWidth = (width - 30) / 2;
-
-// const ImageCard = ({ imageUrl }) => {
-//   const router = useRouter();
-
-//   const handleNavigate = () => {
-//     const encodedUrl = encodeURIComponent(imageUrl);
-//     const encodedName = encodeURIComponent(wallpaperName); // Add this prop to ImageCard
-
-//     router.push({
-//       pathname: "/Screens",
-//       params: {
-//         imageUrl: encodedUrl,
-//         name: encodedName,
-//       },
-//     });
-//   };
-
-//   return (
-//     <TouchableOpacity style={styles.container} onPress={handleNavigate}>
-//       <Image
-//         source={{ uri: imageUrl }}
-//         style={styles.image}
-//         resizeMode="cover"
-//         onError={(e) => {
-//           console.error("Image failed to load:", imageUrl); // Log any errors
-//           e.target.style.display = "none"; // Hide the image if it fails
-//         }}
-//       />
-//     </TouchableOpacity>
-//   );
-// };
-
-// export default ImageCard;
-
-// const styles = StyleSheet.create({
-//   container: {
-//     width: cardWidth,
-//     height: cardWidth * 1.2,
-//     margin: 5,
-//     borderRadius: 20,
-//     overflow: "hidden",
-//     position: "relative",
-//   },
-//   image: {
-//     width: "100%",
-//     height: "100%",
-//   },
-// });
 import {
   Image,
   StyleSheet,
@@ -65,6 +5,7 @@ import {
   TouchableOpacity,
   Dimensions,
   ActivityIndicator,
+  Text,
 } from "react-native";
 import React, { useState } from "react";
 import { useRouter } from "expo-router";
@@ -72,7 +13,7 @@ import { useRouter } from "expo-router";
 const { width } = Dimensions.get("window");
 const cardWidth = (width - 30) / 2;
 
-const ImageCard = ({ imageUrl, wallpaperName }) => {
+const ImageCard = ({ imageUrl, wallpaperName, style }) => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -98,7 +39,10 @@ const ImageCard = ({ imageUrl, wallpaperName }) => {
   }
 
   return (
-    <TouchableOpacity style={styles.container} onPress={handleNavigate}>
+    <TouchableOpacity
+      style={[styles.container, style]}
+      onPress={handleNavigate}
+    >
       {isLoading && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color="#3498db" />
@@ -116,6 +60,7 @@ const ImageCard = ({ imageUrl, wallpaperName }) => {
           setIsLoading(false);
         }}
       />
+      {wallpaperName && <Text style={styles.name}>{wallpaperName}</Text>}
     </TouchableOpacity>
   );
 };
@@ -124,15 +69,23 @@ const styles = StyleSheet.create({
   container: {
     width: cardWidth,
     height: cardWidth * 1.2,
-    margin: 5,
-    borderRadius: 20,
-    overflow: "hidden",
-    position: "relative",
+    margin: 0,
+    borderRadius: 15,
     backgroundColor: "#f0f0f0",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    overflow: "hidden",
   },
   image: {
     width: "100%",
     height: "100%",
+    resizeMode: "cover",
   },
   hiddenImage: {
     display: "none",
@@ -145,6 +98,18 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: "center",
     alignItems: "center",
+  },
+  name: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 8,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    color: "white",
+    fontSize: 12,
+    textAlign: "center",
+    fontFamily: "Outfit-Medium",
   },
 });
 

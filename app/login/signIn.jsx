@@ -1,8 +1,15 @@
-import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  ImageBackground,
+} from "react-native";
 import React from "react";
 import { useOAuth } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
+import { StatusBar } from "expo-status-bar";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -23,12 +30,16 @@ const SignIn = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome to HorizonWalls</Text>
+    <ImageBackground
+      source={require("../../assets/images/bgLanding.png")}
+      style={styles.container}
+    >
+      <StatusBar translucent backgroundColor="transparent" style="light" />
+      <Text style={styles.title}>Horizon Walls</Text>
       <TouchableOpacity style={styles.button} onPress={onSignInWithGoogle}>
         <Text style={styles.buttonText}>Sign in with Google</Text>
       </TouchableOpacity>
-    </View>
+    </ImageBackground>
   );
 };
 
@@ -39,23 +50,38 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    padding: 0,
+    width: "100%",
+    height: "100%",
   },
   title: {
-    fontSize: 24,
-    fontWeight: "bold",
+    fontSize: 32,
+    fontFamily: "Outfit-Bold",
     marginBottom: 30,
+    color: "white",
+    textShadowColor: "rgba(0, 0, 0, 0.75)",
+    textShadowOffset: { width: -1, height: 1 },
+    textShadowRadius: 10,
   },
   button: {
-    backgroundColor: "#4285F4",
+    backgroundColor: "black",
     padding: 15,
-    borderRadius: 8,
-    width: "100%",
+    borderRadius: 20,
+    width: "80%",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   buttonText: {
     color: "white",
     fontSize: 16,
+    fontFamily: "Outfit-Medium",
     fontWeight: "600",
   },
 });

@@ -4,6 +4,7 @@ import {
   View,
   ActivityIndicator,
   Text,
+  Dimensions,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import Header from "../../components/Header";
@@ -15,6 +16,16 @@ import { StatusBar } from "expo-status-bar";
 // const API_URL = "http://localhost:8000/api/wallpapers";
 // Replace localhost with your computer's IP address
 const API_URL = "http://192.168.1.11:8000/api/wallpapers"; // Replace X with your actual IP
+
+const { width } = Dimensions.get("window");
+const CARD_MARGIN = 8;
+const CONTAINER_PADDING = 10;
+const NUMBER_OF_COLUMNS = 2;
+
+// Calculate card width first
+const CARD_WIDTH = (width - (CONTAINER_PADDING * 2) - (CARD_MARGIN * (NUMBER_OF_COLUMNS + 1))) / NUMBER_OF_COLUMNS;
+// Calculate card height using 9:16 aspect ratio (portrait)
+const CARD_HEIGHT = (CARD_WIDTH * 16) / 9;
 
 const Home = () => {
   const [wallpapers, setWallpapers] = useState([]);
@@ -75,12 +86,18 @@ const Home = () => {
       <FlatList
         data={wallpapers}
         keyExtractor={(item) => item._id}
-        renderItem={({ item }) => {
-          console.log("Rendering image:", item.image, "name:", item.name);
-          return <ImageCard imageUrl={item.image} wallpaperName={item.name} />;
-        }}
+        renderItem={({ item }) => (
+          <View style={{ margin: CARD_MARGIN }}>
+            <ImageCard 
+              imageUrl={item.image} 
+              wallpaperName={item.name}
+              style={styles.card}
+            />
+          </View>
+        )}
         numColumns={2}
         contentContainerStyle={styles.listContainer}
+        showsVerticalScrollIndicator={false}
       />
     </View>
   );
@@ -92,8 +109,24 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
   },
   listContainer: {
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+    paddingHorizontal: CONTAINER_PADDING,
+    paddingVertical: CONTAINER_PADDING,
+    alignItems: "center", // Center cards horizontally
+  },
+  card: {
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT,
+    borderRadius: 15,
+    overflow: "hidden",
+    backgroundColor: "#f0f0f0",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   loader: {
     flex: 1,
@@ -109,6 +142,7 @@ const styles = StyleSheet.create({
   errorText: {
     color: "red",
     textAlign: "center",
+    fontFamily: "Outfit-Regular",
   },
 });
 

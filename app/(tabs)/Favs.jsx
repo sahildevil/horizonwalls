@@ -9,24 +9,40 @@ import {
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRouter } from "expo-router";
+import { useRouter, useNavigation } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 
 const { width } = Dimensions.get("window");
-const cardWidth = (width - 30) / 2;
+const CARD_MARGIN = 8;
+const CONTAINER_PADDING = 10;
+const NUMBER_OF_COLUMNS = 2;
+
+// Calculate card width first
+const CARD_WIDTH =
+  (width - CONTAINER_PADDING * 2 - CARD_MARGIN * (NUMBER_OF_COLUMNS + 1)) /
+  NUMBER_OF_COLUMNS;
+// Calculate card height using 9:16 aspect ratio (portrait)
+const CARD_HEIGHT = (CARD_WIDTH * 16) / 9;
 
 const Favs = () => {
   const [favorites, setFavorites] = useState([]);
   const router = useRouter();
 
-  useEffect(() => {
-    loadFavorites();
-  }, []);
+  // Use useFocusEffect instead of useEffect
+  useFocusEffect(
+    React.useCallback(() => {
+      loadFavorites();
+    }, [])
+  );
 
   const loadFavorites = async () => {
     try {
       const favoritesData = await AsyncStorage.getItem("favorites");
+      console.log("Loaded favorites:", favoritesData); // Debug log
       if (favoritesData) {
-        setFavorites(JSON.parse(favoritesData));
+        const parsedFavorites = JSON.parse(favoritesData);
+        console.log("Parsed favorites:", parsedFavorites); // Debug log
+        setFavorites(parsedFavorites);
       }
     } catch (error) {
       console.error("Error loading favorites:", error);
@@ -35,7 +51,7 @@ const Favs = () => {
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
-      style={styles.card}
+      style={[styles.card, { margin: CARD_MARGIN }]}
       onPress={() => {
         router.push({
           pathname: "/Screens",
@@ -75,8 +91,6 @@ const Favs = () => {
   );
 };
 
-export default Favs;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -84,22 +98,31 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   title: {
+    fontFamily: "Outfit-Bold",
     fontSize: 28,
-    fontWeight: "bold",
     marginHorizontal: 20,
     marginBottom: 15,
     color: "#1a1a1a",
   },
   listContainer: {
-    padding: 15,
+    paddingHorizontal: CONTAINER_PADDING,
+    paddingVertical: CONTAINER_PADDING,
+    alignItems: "center", // Center cards horizontally
   },
   card: {
-    width: cardWidth,
-    height: cardWidth * 1.5,
-    margin: 5,
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT,
     borderRadius: 15,
     overflow: "hidden",
     backgroundColor: "#f0f0f0",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   image: {
     width: "100%",
@@ -111,7 +134,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   emptyText: {
+    fontFamily: "Outfit-Regular",
     fontSize: 16,
     color: "#666",
   },
 });
+
+export default Favs;
