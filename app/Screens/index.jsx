@@ -7,6 +7,7 @@ import {
   Platform,
   PermissionsAndroid,
   Linking,
+  NativeModules,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { StatusBar } from "expo-status-bar";
@@ -19,6 +20,7 @@ import * as FileSystem from "expo-file-system";
 import * as MediaLibrary from "expo-media-library";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import {
   RewardedAd,
   TestIds,
@@ -218,75 +220,78 @@ const Screens = () => {
     if (!decodedUrl) return;
 
     try {
-      if (Platform.OS === "android") {
-        const permission = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE
-        );
-        if (permission !== "granted") {
-          Alert.alert(
-            "Permission Denied",
-            "Please grant storage permission to set wallpaper."
-          );
-          return;
-        }
-      }
-
+      // First download the image
       const filename = `temp_wallpaper_${Date.now()}.${getFileExtension(
         decodedUrl
       )}`;
       const fileUri = `${FileSystem.documentDirectory}${filename}`;
-
       const { uri } = await FileSystem.downloadAsync(decodedUrl, fileUri);
 
-      const asset = await MediaLibrary.createAssetAsync(uri);
-
-      try {
-        const album = await MediaLibrary.getAlbumAsync("HorizonWalls");
-        if (album === null) {
-          await MediaLibrary.createAlbumAsync("HorizonWalls", asset, false);
-        } else {
-          await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
-        }
-
-        Alert.alert(
-          "Wallpaper Downloaded",
-          "The image has been saved to your gallery. Would you like to set it as wallpaper?",
-          [
-            {
-              text: "Set Wallpaper",
-              onPress: async () => {
-                if (Platform.OS === "android") {
-                  try {
-                    await Linking.sendIntent(
-                      "android.intent.action.SET_WALLPAPER"
-                    );
-                  } catch (error) {
-                    console.error("Failed to open wallpaper settings:", error);
-                    Alert.alert(
-                      "Manual Setup Required",
-                      "Please go to your device settings to set the wallpaper."
-                    );
+      Alert.alert(
+        "Set Wallpaper",
+        "Where would you like to set this wallpaper?",
+        [
+          {
+            text: "Home Screen",
+            onPress: () => {
+              NativeModules.WallPaperManager.setWallpaper(
+                { uri, screen: "home" },
+                (res) => {
+                  if (res === "success") {
+                    Alert.alert("Success", "Wallpaper set as home screen!");
+                  } else {
+                    Alert.alert("Error", "Failed to set wallpaper");
                   }
-                } else {
-                  Alert.alert(
-                    "Set Wallpaper",
-                    "Please go to your device settings to set the wallpaper."
-                  );
+                  // Clean up temp file
+                  FileSystem.deleteAsync(fileUri);
                 }
-              },
+              );
             },
-            {
-              text: "Cancel",
-              style: "cancel",
+          },
+          {
+            text: "Lock Screen",
+            onPress: () => {
+              NativeModules.WallPaperManager.setWallpaper(
+                { uri, screen: "lock" },
+                (res) => {
+                  if (res === "success") {
+                    Alert.alert("Success", "Wallpaper set as lock screen!");
+                  } else {
+                    Alert.alert("Error", "Failed to set wallpaper");
+                  }
+                  // Clean up temp file
+                  FileSystem.deleteAsync(fileUri);
+                }
+              );
             },
-          ]
-        );
-      } catch (error) {
-        console.error("Album error:", error);
-        Alert.alert("Error", "Failed to save wallpaper");
-      }
-
-      await FileSystem.deleteAsync(fileUri);
+          },
+          {
+            text: "Both",
+            onPress: () => {
+              NativeModules.WallPaperManager.setWallpaper(
+                { uri, screen: "both" },
+                (res) => {
+                  if (res === "success") {
+                    Alert.alert("Success", "Wallpaper set on both screens!");
+                  } else {
+                    Alert.alert("Error", "Failed to set wallpaper");
+                  }
+                  // Clean up temp file
+                  FileSystem.deleteAsync(fileUri);
+                }
+              );
+            },
+          },
+          {
+            text: "Cancel",
+            style: "cancel",
+            onPress: () => {
+              // Clean up temp file on cancel
+              FileSystem.deleteAsync(fileUri);
+            },
+          },
+        ]
+      );
     } catch (error) {
       console.error("Wallpaper setup error:", error);
       Alert.alert("Error", "Failed to prepare wallpaper");
@@ -366,4 +371,3 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
 });
-    
