@@ -9,7 +9,7 @@ import React, { useEffect, useState } from "react";
 import Header from "../../components/Header";
 import CategoryCard from "../../components/CategoryCard";
 
-const API_URL = "http://192.168.1.11:8000/api/categories";
+const API_URL = "https://horizonwalls-server.vercel.app/api/categories";
 const Categories = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);

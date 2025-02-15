@@ -9,7 +9,7 @@ import React, { useEffect, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
 import ImageCard from "../../components/ImageCard";
 
-const API_URL = "http://192.168.1.11:8000/api/wallpapers";
+const API_URL = "https://horizonwalls-server.vercel.app/api/wallpapers";
 
 const CategoryDetails = () => {
   const { id, name } = useLocalSearchParams();
