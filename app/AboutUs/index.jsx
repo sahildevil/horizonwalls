@@ -54,6 +54,23 @@ const AboutUs = () => {
         <Text style={styles.version}>Version 1.0.0</Text>
 
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>About the Developer</Text>
+          <Image
+            source={{
+              uri: "https://res.cloudinary.com/defe2sw6l/image/upload/v1739628732/DSC04886_3_v3u9jg.jpg",
+            }}
+            style={styles.developerImage}
+          />
+          <Text style={styles.devTitle}>Sahil Kumar</Text>
+          <Text style={styles.sectionText}>
+            Hi! I’m Sahil Kumar, a developer passionate about creating beautiful
+            and functional apps. This wallpaper app brings you high-quality
+            wallpapers to personalize your device. Enjoy and keep your screen
+            fresh!
+          </Text>
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>About the App</Text>
           <Text style={styles.sectionText}>
             Horizon Walls is your premium destination for high-quality
@@ -142,6 +159,13 @@ const styles = StyleSheet.create({
     color: "#1a1a1a",
     marginBottom: 10,
   },
+  devTitle: {
+    fontFamily: "Outfit-Bold",
+    fontSize: 20,
+    color: "#1a1a1a",
+    marginBottom: 5,
+    textAlign: "center",
+  },
   sectionText: {
     fontFamily: "Outfit-Regular",
     fontSize: 16,
@@ -161,6 +185,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#4285F4",
     textDecorationLine: "underline",
+  },
+  developerImage: {
+    width: 150,
+    height: 150,
+    alignSelf: "center",
+    marginVertical: 10,
+    borderRadius: 75, // Makes it circular
+    borderWidth: 3,
+    borderColor: "black",
   },
 });
 

@@ -66,13 +66,13 @@ const Home = () => {
   }, []);
 
   // Polling for updates every 30 seconds
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      fetchWallpapers();
-    }, 30000); // 30 seconds
+  // useEffect(() => {
+  //   const intervalId = setInterval(() => {
+  //     fetchWallpapers();
+  //   }, 30000); // 30 seconds
 
-    return () => clearInterval(intervalId);
-  }, []);
+  //   return () => clearInterval(intervalId);
+  // }, []);
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);

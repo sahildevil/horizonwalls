@@ -8,6 +8,7 @@ import {
   PermissionsAndroid,
   Linking,
   NativeModules,
+  ActivityIndicator,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { StatusBar } from "expo-status-bar";
@@ -43,6 +44,7 @@ const Screens = () => {
   const [adInstance, setAdInstance] = useState(null);
   const [downloadPending, setDownloadPending] = useState(false);
   const [currentAd, setCurrentAd] = useState(null);
+  const [isAdLoading, setIsAdLoading] = useState(false);
 
   useEffect(() => {
     checkFavorite();
@@ -216,28 +218,69 @@ const Screens = () => {
   };
 
   const downloadImage = async () => {
-    if (!loaded || !currentAd) {
-      Alert.alert(
-        "Ad not ready",
-        "Please wait a moment while we prepare the ad...",
-        [{ text: "OK" }]
-      );
+    // If ad is already loaded, show it immediately
+    if (loaded && currentAd) {
+      try {
+        await currentAd.show();
+      } catch (error) {
+        console.error("Error showing ad:", error);
+        Alert.alert("Error", "Failed to show ad. Please try again.");
+        setLoaded(false);
+        setCurrentAd(null);
+        setIsAdLoading(false);
+      }
       return;
     }
 
+    // If no ad is loaded, start loading process
+    setIsAdLoading(true);
+
+    const newAd = RewardedAd.createForAdRequest(adUnitId, {
+      requestNonPersonalizedAdsOnly: true,
+      keywords: ["wallpaper", "art", "design"],
+    });
+
     try {
-      await currentAd.show();
+      // Set up event listeners
+      const loadPromise = new Promise((resolve, reject) => {
+        const unsubscribe = newAd.addAdEventListener(
+          RewardedAdEventType.LOADED,
+          () => {
+            console.log("Ad loaded successfully");
+            unsubscribe();
+            resolve();
+          }
+        );
+
+        // Add error handling
+        const unsubscribeError = newAd.addAdEventListener(
+          RewardedAdEventType.FAILED_TO_LOAD,
+          (error) => {
+            console.error("Ad failed to load:", error);
+            unsubscribeError();
+            reject(new Error("Failed to load ad"));
+          }
+        );
+
+        // Start loading the ad
+        newAd.load();
+      });
+
+      // Wait for ad to load
+      await loadPromise;
+
+      setLoaded(true);
+      setCurrentAd(newAd);
+      setIsAdLoading(false);
+
+      // Show ad
+      await newAd.show();
     } catch (error) {
-      console.error("Error showing ad:", error);
-      Alert.alert("Error", "Failed to show ad. Please try again.");
-      // Create and load a new ad after error
+      console.error("Error in ad flow:", error);
+      Alert.alert("Error", "Failed to load or show ad. Please try again.");
       setLoaded(false);
       setCurrentAd(null);
-      const newAd = RewardedAd.createForAdRequest(adUnitId, {
-        requestNonPersonalizedAdsOnly: true,
-        keywords: ["wallpaper", "art", "design"],
-      });
-      newAd.load();
+      setIsAdLoading(false);
     }
   };
 
@@ -372,8 +415,12 @@ const Screens = () => {
       </TouchableOpacity>
 
       <BlurView intensity={100} tint="dark" style={styles.toolbar}>
-        <TouchableOpacity onPress={downloadImage}>
-          <Feather name="download" size={24} color="white" />
+        <TouchableOpacity onPress={downloadImage} disabled={isAdLoading}>
+          {isAdLoading ? (
+            <ActivityIndicator size="small" color="white" />
+          ) : (
+            <Feather name="download" size={24} color="white" />
+          )}
         </TouchableOpacity>
         {/* <TouchableOpacity onPress={setWallpaper}>
           <MaterialIcons name="now-wallpaper" size={24} color="white" />
