@@ -84,7 +84,7 @@ const Home = () => {
       <StatusBar style="dark" />
       <Header />
       <FlatList
-        data={wallpapers}
+        data={[...wallpapers].reverse()} // Create a reversed copy of the array
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
           <View style={{ margin: CARD_MARGIN }}>
