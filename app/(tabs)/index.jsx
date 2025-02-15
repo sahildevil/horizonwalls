@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   Text,
   Dimensions,
+  RefreshControl,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import Header from "../../components/Header";
@@ -23,7 +24,9 @@ const CONTAINER_PADDING = 10;
 const NUMBER_OF_COLUMNS = 2;
 
 // Calculate card width first
-const CARD_WIDTH = (width - (CONTAINER_PADDING * 2) - (CARD_MARGIN * (NUMBER_OF_COLUMNS + 1))) / NUMBER_OF_COLUMNS;
+const CARD_WIDTH =
+  (width - CONTAINER_PADDING * 2 - CARD_MARGIN * (NUMBER_OF_COLUMNS + 1)) /
+  NUMBER_OF_COLUMNS;
 // Calculate card height using 9:16 aspect ratio (portrait)
 const CARD_HEIGHT = (CARD_WIDTH * 16) / 9;
 
@@ -31,35 +34,51 @@ const Home = () => {
   const [wallpapers, setWallpapers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    const fetchWallpapers = async () => {
-      try {
-        console.log("Fetching wallpapers...");
-        const response = await fetch(API_URL);
+  const fetchWallpapers = async () => {
+    try {
+      console.log("Fetching wallpapers...");
+      const response = await fetch(API_URL);
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log("Fetched Data:", data);
-
-        // Check if the response has the expected structure
-        if (!data.success || !Array.isArray(data.wallpapers)) {
-          throw new Error("Invalid data structure received from API");
-        }
-
-        // Set the wallpapers array from the nested structure
-        setWallpapers(data.wallpapers);
-      } catch (error) {
-        console.error("Error fetching wallpapers:", error);
-        setError(error.message);
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    };
 
+      const data = await response.json();
+      console.log("Fetched Data:", data);
+
+      if (!data.success || !Array.isArray(data.wallpapers)) {
+        throw new Error("Invalid data structure received from API");
+      }
+
+      setWallpapers(data.wallpapers);
+      setError(null);
+    } catch (error) {
+      console.error("Error fetching wallpapers:", error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  // Initial fetch
+  useEffect(() => {
+    fetchWallpapers();
+  }, []);
+
+  // Polling for updates every 30 seconds
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      fetchWallpapers();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
     fetchWallpapers();
   }, []);
 
@@ -88,8 +107,8 @@ const Home = () => {
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
           <View style={{ margin: CARD_MARGIN }}>
-            <ImageCard 
-              imageUrl={item.image} 
+            <ImageCard
+              imageUrl={item.image}
               wallpaperName={item.name}
               style={styles.card}
             />
@@ -98,6 +117,14 @@ const Home = () => {
         numColumns={2}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#4285F4"]} // Android
+            tintColor="#4285F4" // iOS
+          />
+        }
       />
     </View>
   );
