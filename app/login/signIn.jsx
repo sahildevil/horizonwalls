@@ -4,6 +4,7 @@ import {
   View,
   TouchableOpacity,
   ImageBackground,
+  Image,
 } from "react-native";
 import React from "react";
 import { useOAuth } from "@clerk/clerk-expo";
@@ -35,6 +36,10 @@ const SignIn = () => {
       style={styles.container}
     >
       <StatusBar translucent backgroundColor="transparent" style="light" />
+      <Image
+        source={require("../../assets/images/logo.png")}
+        style={styles.logo}
+      />
       <Text style={styles.title}>Horizon Walls</Text>
       <TouchableOpacity style={styles.button} onPress={onSignInWithGoogle}>
         <Text style={styles.buttonText}>Sign in with Google</Text>
@@ -83,5 +88,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "Outfit-Medium",
     fontWeight: "600",
+  },
+  logo: {
+    width: 100,
+    height: 100,
+    marginBottom: 20,
+    borderRadius: 20,
   },
 });

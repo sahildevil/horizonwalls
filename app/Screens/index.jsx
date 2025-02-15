@@ -30,12 +30,7 @@ import {
 
 const adUnitId = __DEV__
   ? TestIds.REWARDED
-  : "ca-app-pub-4677981033286236~5504793911";
-
-const rewarded = RewardedAd.createForAdRequest(adUnitId, {
-  requestNonPersonalizedAdsOnly: true,
-  keywords: ["wallpaper", "art", "design"],
-});
+  : "ca-app-pub-4677981033286236/7236677981";
 
 const Screens = () => {
   const params = useLocalSearchParams();
@@ -45,57 +40,106 @@ const Screens = () => {
   const router = useRouter();
   const [loaded, setLoaded] = useState(false);
   const [isRewarded, setIsRewarded] = useState(false);
+  const [adInstance, setAdInstance] = useState(null);
+  const [downloadPending, setDownloadPending] = useState(false);
+  const [currentAd, setCurrentAd] = useState(null);
 
   useEffect(() => {
     checkFavorite();
   }, [decodedUrl]);
 
+  // Initialize ad on component mount
   useEffect(() => {
-    const unsubscribeLoaded = rewarded.addAdEventListener(
-      RewardedAdEventType.LOADED,
-      () => {
-        setLoaded(true);
-      }
-    );
+    const createAndLoadAd = () => {
+      const newAd = RewardedAd.createForAdRequest(adUnitId, {
+        requestNonPersonalizedAdsOnly: true,
+        keywords: ["wallpaper", "art", "design"],
+      });
 
-    const unsubscribeEarned = rewarded.addAdEventListener(
-      RewardedAdEventType.EARNED_REWARD,
-      (reward) => {
-        console.log("User earned reward:", reward);
-        setIsRewarded(true);
-      }
-    );
-
-    const unsubscribeClosed = rewarded.addAdEventListener(
-      AdEventType.CLOSED,
-      () => {
-        console.log("Ad closed");
-        if (isRewarded) {
-          handleDownload(); // ✅ Download wallpaper when ad is closed
-          setIsRewarded(false); // Reset reward state
+      const unsubscribeLoaded = newAd.addAdEventListener(
+        RewardedAdEventType.LOADED,
+        () => {
+          console.log("Ad loaded successfully");
+          setLoaded(true);
+          setCurrentAd(newAd);
         }
-        setLoaded(false);
-        rewarded.load();
-      }
-    );
+      );
 
-    const unsubscribeFailedToLoad = rewarded.addAdEventListener(
-      AdEventType.ERROR,
-      (error) => {
-        console.error("Ad failed to load:", error);
-        setLoaded(false);
-      }
-    );
+      const unsubscribeEarned = newAd.addAdEventListener(
+        RewardedAdEventType.EARNED_REWARD,
+        () => {
+          console.log("User earned reward");
+          setIsRewarded(true);
+          setDownloadPending(true); // Set download pending when reward is earned
+        }
+      );
 
-    rewarded.load();
+      const unsubscribeClosed = newAd.addAdEventListener(
+        AdEventType.CLOSED,
+        () => {
+          console.log("Ad closed");
+          setLoaded(false);
+          setCurrentAd(null);
+          // Load new ad immediately
+          createAndLoadAd();
+        }
+      );
 
-    return () => {
-      unsubscribeLoaded();
-      unsubscribeEarned();
-      unsubscribeClosed();
-      unsubscribeFailedToLoad();
+      newAd.load();
+
+      return () => {
+        unsubscribeLoaded();
+        unsubscribeEarned();
+        unsubscribeClosed();
+      };
     };
-  }, [isRewarded]); // ✅ Add `isRewarded` as a dependency
+
+    const cleanup = createAndLoadAd();
+    return cleanup;
+  }, []);
+
+  // Handle download when reward is earned
+  useEffect(() => {
+    const performDownload = async () => {
+      if (isRewarded && downloadPending && decodedUrl) {
+        try {
+          const extension = getFileExtension(decodedUrl);
+          const baseFileName = wallpaperName
+            ? sanitizeFileName(wallpaperName)
+            : "wallpaper_" + new Date().getTime();
+          const filename = `${baseFileName}.${extension}`;
+
+          console.log("Starting download for:", filename);
+
+          const directory = `${FileSystem.documentDirectory}HorizonWalls/`;
+          await FileSystem.makeDirectoryAsync(directory, {
+            intermediates: true,
+          });
+
+          const fileUri = `${directory}${filename}`;
+
+          console.log("Downloading from:", decodedUrl);
+          const { uri } = await FileSystem.downloadAsync(decodedUrl, fileUri);
+          await MediaLibrary.saveToLibraryAsync(uri);
+
+          Alert.alert(
+            "Download Complete",
+            `Wallpaper saved in the "HorizonWalls" folder!`
+          );
+
+          console.log("Successfully saved at:", uri);
+        } catch (error) {
+          console.error("Download error:", error);
+          Alert.alert("Error", "Failed to download image.");
+        } finally {
+          setIsRewarded(false);
+          setDownloadPending(false);
+        }
+      }
+    };
+
+    performDownload();
+  }, [isRewarded, downloadPending, decodedUrl, wallpaperName]); // Empty dependency array since we want this only on mount
 
   const checkFavorite = async () => {
     try {
@@ -110,7 +154,7 @@ const Screens = () => {
   const toggleFavorite = async () => {
     try {
       const favorites = await AsyncStorage.getItem("favorites");
-      console.log("Current favorites:", favorites); // Debug log
+      console.log("Current favorites:", favorites);
       const favoritesArray = favorites ? JSON.parse(favorites) : [];
 
       if (isFavorite) {
@@ -118,7 +162,7 @@ const Screens = () => {
           (fav) => fav.imageUrl !== decodedUrl
         );
         await AsyncStorage.setItem("favorites", JSON.stringify(newFavorites));
-        console.log("Updated favorites (removed):", newFavorites); // Debug log
+        console.log("Updated favorites (removed):", newFavorites);
         setIsFavorite(false);
         Alert.alert("Removed from favorites");
       } else {
@@ -129,7 +173,7 @@ const Screens = () => {
         };
         const newFavorites = [...favoritesArray, newFavorite];
         await AsyncStorage.setItem("favorites", JSON.stringify(newFavorites));
-        console.log("Updated favorites (added):", newFavorites); // Debug log
+        console.log("Updated favorites (added):", newFavorites);
         setIsFavorite(true);
         Alert.alert("Added to favorites");
       }
@@ -143,6 +187,12 @@ const Screens = () => {
     if (params.imageUrl) {
       const decoded = decodeURIComponent(params.imageUrl);
       setDecodedUrl(decoded);
+      setIsRewarded(false);
+      setDownloadPending(false);
+
+      if (adInstance) {
+        adInstance.load();
+      }
     }
     if (params.name) {
       const decodedName = decodeURIComponent(params.name);
@@ -166,23 +216,36 @@ const Screens = () => {
   };
 
   const downloadImage = async () => {
-    if (!loaded) {
-      Alert.alert("Ad not ready", "Please wait a moment and try again.", [
-        { text: "OK" },
-      ]);
+    if (!loaded || !currentAd) {
+      Alert.alert(
+        "Ad not ready",
+        "Please wait a moment while we prepare the ad...",
+        [{ text: "OK" }]
+      );
       return;
     }
 
     try {
-      await rewarded.show();
+      await currentAd.show();
     } catch (error) {
       console.error("Error showing ad:", error);
       Alert.alert("Error", "Failed to show ad. Please try again.");
+      // Create and load a new ad after error
+      setLoaded(false);
+      setCurrentAd(null);
+      const newAd = RewardedAd.createForAdRequest(adUnitId, {
+        requestNonPersonalizedAdsOnly: true,
+        keywords: ["wallpaper", "art", "design"],
+      });
+      newAd.load();
     }
   };
 
   const handleDownload = async () => {
-    if (!decodedUrl || !isRewarded) return;
+    if (!decodedUrl) {
+      console.log("No URL available for download");
+      return;
+    }
 
     try {
       const extension = getFileExtension(decodedUrl);
@@ -191,18 +254,15 @@ const Screens = () => {
         : "wallpaper_" + new Date().getTime();
       const filename = `${baseFileName}.${extension}`;
 
-      console.log("Saving as:", filename);
+      console.log("Starting download for:", filename);
 
-      // Define the final file path directly inside the "HorizonWalls" album
       const directory = `${FileSystem.documentDirectory}HorizonWalls/`;
       await FileSystem.makeDirectoryAsync(directory, { intermediates: true });
 
       const fileUri = `${directory}${filename}`;
 
-      // Download image directly with correct name
+      console.log("Downloading from:", decodedUrl);
       const { uri } = await FileSystem.downloadAsync(decodedUrl, fileUri);
-
-      // Save directly to Media Library
       await MediaLibrary.saveToLibraryAsync(uri);
 
       Alert.alert(
@@ -210,12 +270,13 @@ const Screens = () => {
         `Wallpaper saved in the "HorizonWalls" folder!`
       );
 
-      console.log("Saved at:", uri);
-      setIsRewarded(false); // Reset reward state
+      console.log("Successfully saved at:", uri);
     } catch (error) {
       console.error("Download error:", error);
       Alert.alert("Error", "Failed to download image.");
+    } finally {
       setIsRewarded(false);
+      setDownloadPending(false);
     }
   };
 
@@ -223,7 +284,6 @@ const Screens = () => {
     if (!decodedUrl) return;
 
     try {
-      // First download the image
       const filename = `temp_wallpaper_${Date.now()}.${getFileExtension(
         decodedUrl
       )}`;
@@ -245,7 +305,6 @@ const Screens = () => {
                   } else {
                     Alert.alert("Error", "Failed to set wallpaper");
                   }
-                  // Clean up temp file
                   FileSystem.deleteAsync(fileUri);
                 }
               );
@@ -262,7 +321,6 @@ const Screens = () => {
                   } else {
                     Alert.alert("Error", "Failed to set wallpaper");
                   }
-                  // Clean up temp file
                   FileSystem.deleteAsync(fileUri);
                 }
               );
@@ -279,7 +337,6 @@ const Screens = () => {
                   } else {
                     Alert.alert("Error", "Failed to set wallpaper");
                   }
-                  // Clean up temp file
                   FileSystem.deleteAsync(fileUri);
                 }
               );
@@ -289,7 +346,6 @@ const Screens = () => {
             text: "Cancel",
             style: "cancel",
             onPress: () => {
-              // Clean up temp file on cancel
               FileSystem.deleteAsync(fileUri);
             },
           },
@@ -315,13 +371,13 @@ const Screens = () => {
         <Ionicons name="chevron-back-outline" size={24} color="white" />
       </TouchableOpacity>
 
-      <BlurView intensity={50} tint="dark" style={styles.toolbar}>
+      <BlurView intensity={100} tint="dark" style={styles.toolbar}>
         <TouchableOpacity onPress={downloadImage}>
           <Feather name="download" size={24} color="white" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={setWallpaper}>
+        {/* <TouchableOpacity onPress={setWallpaper}>
           <MaterialIcons name="now-wallpaper" size={24} color="white" />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <TouchableOpacity onPress={toggleFavorite}>
           <AntDesign
             name={isFavorite ? "heart" : "hearto"}
@@ -364,7 +420,7 @@ const styles = StyleSheet.create({
   toolbar: {
     position: "absolute",
     bottom: 50,
-    width: "80%",
+    width: "60%",
     height: 50,
     alignSelf: "center",
     flexDirection: "row",

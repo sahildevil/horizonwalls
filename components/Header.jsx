@@ -28,11 +28,19 @@ const Header = () => {
   };
 
   const menuItems = [
-    { icon: "info", label: "About Us", onPress: () => console.log("About Us") },
+    {
+      icon: "info",
+      label: "About Us",
+      onPress: () => {
+        router.push("/AboutUs");
+      },
+    },
     {
       icon: "mail",
       label: "Contact Us",
-      onPress: () => console.log("Contact Us"),
+      onPress: () => {
+        router.push("/ContactUs");
+      },
     },
     { icon: "star", label: "Rate App", onPress: () => console.log("Rate App") },
     {
@@ -67,10 +75,17 @@ const Header = () => {
       >
         <View style={styles.menuContainer}>
           <View style={styles.menuHeader}>
-            <Text style={styles.menuTitle}>Menu</Text>
-            <TouchableOpacity onPress={toggleMenu}>
+            <TouchableOpacity onPress={toggleMenu} style={styles.closeButton}>
               <Feather name="x" size={24} color="black" />
             </TouchableOpacity>
+          </View>
+
+          <View style={styles.menuProfile}>
+            <Image
+              source={require("../assets/images/logo.png")}
+              style={styles.menuLogo}
+            />
+            <Text style={styles.menuAppName}>Horizon Walls</Text>
           </View>
 
           {menuItems.map((item, index) => (
@@ -118,13 +133,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   menuHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    marginBottom: 20,
+    marginBottom: 10,
   },
   menuTitle: {
     fontFamily: "Outfit-Bold",
@@ -145,5 +154,28 @@ const styles = StyleSheet.create({
   signOutButton: {
     marginTop: "auto",
     borderBottomWidth: 0,
+  },
+  menuProfile: {
+    alignItems: "center",
+    marginBottom: 30,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  menuLogo: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    marginBottom: 10,
+  },
+  menuAppName: {
+    fontFamily: "Outfit-Bold",
+    fontSize: 24,
+    color: "#1a1a1a",
+    textAlign: "center",
+  },
+  closeButton: {
+    alignSelf: "flex-end",
+    padding: 8,
   },
 });

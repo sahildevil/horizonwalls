@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
 const { width } = Dimensions.get("window");
 const API_URL = "http://192.168.1.11:8000/api/wallpapers"; // Update with your IP
@@ -89,7 +90,15 @@ const SearchScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Search</Text>
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="chevron-back-outline" size={24} color="#1a1a1a" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Search</Text>
+      </View>
       <TextInput
         style={[styles.searchInput, searchQuery && styles.searchInputActive]}
         placeholder="Search wallpapers by name..."
@@ -135,13 +144,23 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     paddingHorizontal: 16,
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+    marginBottom: 10,
+    paddingHorizontal: 10,
+  },
+  backButton: {
+    padding: 8,
+    marginRight: 10,
+    borderRadius: 20,
+  },
   title: {
     fontFamily: "Outfit-Bold",
     fontSize: 28,
-    marginHorizontal: 10,
-    marginTop: 10,
-    marginBottom: 10,
     color: "#1a1a1a",
+    flex: 1,
   },
   searchInput: {
     height: 50,
