@@ -33,7 +33,8 @@ yarn-error.*
 # local env files
 .env*.local
 .env
-
+android/app/build
+android/.gradle
 # typescript
 *.tsbuildinfo
 

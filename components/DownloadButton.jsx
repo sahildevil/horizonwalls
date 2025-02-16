@@ -5,6 +5,7 @@ import {
   Alert,
   ActivityIndicator,
   Platform,
+  ToastAndroid,
 } from "react-native";
 import {
   RewardedAd,
@@ -222,44 +223,52 @@ const DownloadButton = ({ imageUrl, wallpaperName }) => {
       setDownloadStarted(true);
       console.log("Starting download process...");
 
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(
-          "Permission Required",
-          "Please grant permission to save images"
-        );
-        return;
-      }
-
       const extension = getFileExtension(imageUrl);
       const baseFileName = wallpaperName
         ? sanitizeFileName(wallpaperName)
         : "wallpaper_" + new Date().getTime();
       const filename = `${baseFileName}.${extension}`;
 
-      const directory = `${FileSystem.documentDirectory}HorizonWalls/`;
-      await FileSystem.makeDirectoryAsync(directory, { intermediates: true });
-
-      const fileUri = `${directory}${filename}`;
+      // Download to cache directory first
+      const fileUri = `${FileSystem.cacheDirectory}${filename}`;
       const downloadResult = await FileSystem.downloadAsync(imageUrl, fileUri);
-      const assetResult = await MediaLibrary.saveToLibraryAsync(
-        downloadResult.uri
-      );
 
-      Alert.alert("Success!", "Wallpaper saved successfully!", [
-        { text: "OK", onPress: () => console.log("Alert closed") },
-      ]);
+      if (Platform.OS === "android" && Platform.Version >= 29) {
+        // For Android 10 and above, use MediaLibrary without permissions
+        await MediaLibrary.saveToLibraryAsync(downloadResult.uri);
+
+        // Show toast notification instead of alert for better UX
+        ToastAndroid.show("Wallpaper saved successfully!", ToastAndroid.SHORT);
+      } else {
+        // For older Android versions, we still need permissions
+        const { status } = await MediaLibrary.requestPermissionsAsync();
+        if (status === "granted") {
+          await MediaLibrary.saveToLibraryAsync(downloadResult.uri);
+          ToastAndroid.show(
+            "Wallpaper saved successfully!",
+            ToastAndroid.SHORT
+          );
+        } else {
+          Alert.alert(
+            "Permission needed",
+            "Please allow storage permission to save wallpapers"
+          );
+        }
+      }
+
+      // Clean up the cached file
+      await FileSystem.deleteAsync(fileUri, { idempotent: true });
     } catch (error) {
       console.error("Download error:", error);
       Alert.alert(
         "Download Failed",
-        "There was an error downloading the wallpaper: " + error.message
+        "There was an error downloading the wallpaper"
       );
     } finally {
       setDownloadStarted(false);
       setIsRewarded(false);
       setDownloadPending(false);
-      resetAdState(); // Reset ad state after download completes
+      resetAdState();
     }
   };
 

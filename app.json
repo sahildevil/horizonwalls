@@ -13,16 +13,17 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-logoicon.png",
+        "foregroundImage": "./assets/images/5.png",
         "backgroundColor": "#ffffff"
       },
       "permissions": [
         "WRITE_EXTERNAL_STORAGE",
         "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "READ_EXTERNAL_STORAGE"
+        "MEDIA_LIBRARY",
+        "MEDIA_LIBRARY_WRITE_ONLY"
       ],
-      "package": "com.sahil.horizonwalls"
+      "package": "com.sahil.horizonwalls",
+      "targetSdkVersion": 33
     },
     "web": {
       "bundler": "metro",
@@ -34,11 +35,10 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/logoicon.png",
+          "image": "./assets/images/4.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#000000"
-          
         }
       ],
       [
@@ -56,18 +56,15 @@
           "playStoreSigningType": "debug",
           "iosUrlScheme": "com.googleusercontent.apps.1234567890-fakeid"
         }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow Horizon Walls to access your photos.",
+          "savePhotosPermission": "Allow Horizon Walls to save photos.",
+          "isAccessMediaLocationEnabled": true
+        }
       ]
-    ],
-    "experiments": {
-      "typedRoutes": true
-    },
-    "extra": {
-      "router": {
-        "origin": false
-      },
-      "eas": {
-        "projectId": "0cbdfc73-8682-448c-ad50-eb6b5bc55971"
-      }
-    }
+    ]
   }
 }

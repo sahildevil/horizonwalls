@@ -37,10 +37,11 @@ const SignIn = () => {
     >
       <StatusBar translucent backgroundColor="transparent" style="light" />
       <Image
-        source={require("../../assets/images/logo.png")}
+        source={require("../../assets/images/4.png")}
         style={styles.logo}
       />
       <Text style={styles.title}>Horizon Walls</Text>
+     
       <TouchableOpacity
         style={[styles.button, loading && styles.buttonDisabled]}
         onPress={handleSignIn}
@@ -69,12 +70,21 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontFamily: "Outfit-Bold",
+    fontFamily: "Tan-Mon",
     marginBottom: 30,
     color: "white",
-    textShadowColor: "rgba(0, 0, 0, 0.75)",
-    textShadowOffset: { width: -1, height: 1 },
-    textShadowRadius: 10,
+    // textShadowColor: "rgba(0, 0, 0, 0.75)",
+    // textShadowOffset: { width: -1, height: 1 },
+    // textShadowRadius: 10,
+  },
+  title2: {
+    fontSize: 15,
+    fontFamily: "Outfit-Medium",
+    marginBottom: 30,
+    color: "white",
+    // textShadowColor: "rgba(0, 0, 0, 0.75)",
+    // textShadowOffset: { width: -1, height: 1 },
+    // textShadowRadius: 10,
   },
   button: {
     backgroundColor: "black",
@@ -89,7 +99,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-    elevation: 5,
+    elevation: 10,
   },
   buttonText: {
     color: "white",
