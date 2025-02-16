@@ -86,9 +86,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.sahil1302.horizonwalls'
+    namespace 'com.sahil.horizonwalls'
     defaultConfig {
-        applicationId 'com.sahil1302.horizonwalls'
+        applicationId 'com.sahil.horizonwalls'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

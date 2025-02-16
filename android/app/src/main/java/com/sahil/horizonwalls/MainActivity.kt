@@ -1,4 +1,4 @@
-package com.sahil1302.horizonwalls
+package com.sahil.horizonwalls
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

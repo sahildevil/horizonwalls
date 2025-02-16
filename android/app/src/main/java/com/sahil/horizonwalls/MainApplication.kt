@@ -1,4 +1,4 @@
-package com.sahil1302.horizonwalls
+package com.sahil.horizonwalls
 
 import android.app.Application
 import android.content.res.Configuration

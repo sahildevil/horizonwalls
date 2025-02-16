@@ -28,7 +28,7 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="horizonwalls"/>
-        <data android:scheme="com.sahil1302.horizonwalls"/>
+        <data android:scheme="com.sahil.horizonwalls"/>
         <data android:scheme="exp+horizonwalls"/>
       </intent-filter>
     </activity>

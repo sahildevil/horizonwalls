@@ -1,43 +1,104 @@
-import { ClerkProvider } from "@clerk/clerk-expo";
-import * as SecureStore from "expo-secure-store";
-import { useRouter } from "expo-router";
-import * as WebBrowser from 'expo-web-browser';
+// import React, { createContext, useState, useContext, useEffect } from 'react';
+// import { GoogleSignin, type User, statusCodes } from '@react-native-google-signin/google-signin';
+// import { Platform } from 'react-native';
+// import * as SecureStore from "expo-secure-store";
+// import { useRouter } from "expo-router";
+// import * as WebBrowser from 'expo-web-browser';
 
-WebBrowser.maybeCompleteAuthSession();
+// WebBrowser.maybeCompleteAuthSession();
 
-const tokenCache = {
-  async getToken(key: string) {
-    try {
-      return SecureStore.getItemAsync(key);
-    } catch (err) {
-      return null;
-    }
-  },
-  async saveToken(key: string, value: string) {
-    try {
-      return SecureStore.setItemAsync(key, value);
-    } catch (err) {
-      return;
-    }
-  },
-};
+// interface AuthContextType {
+//   isSignedIn: boolean;
+//   userInfo: User | null;
+//   signIn: () => Promise<void>;
+//   signOut: () => Promise<void>;
+// }
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
+// const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-  return (
-    <ClerkProvider
-      publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY}
-      tokenCache={tokenCache}
-      redirectUrl={process.env.EXPO_PUBLIC_CLERK_REDIRECT_URL}
-      afterSignIn={() => router.replace("/(tabs)")}
-      afterSignOut={() => router.replace("/login")}
-      oauthOptions={{
-        androidPackageName: "com.horizonwalls.sahil", // Update this with your actual package name
-        androidHashedFingerprint: "99:BE:3D:AF:E5:43:5C:99:AB:B9:50:66:3E:CA:AC:98:9C:D9:80:93:11:7F:8A:02:B1:E3:DD:12:4A:52:6A:63" // Paste the SHA-256 value here
-      }}
-    >
-      {children}
-    </ClerkProvider>
-  );
-}
+// export function AuthProvider({ children }: { children: React.ReactNode }) {
+//   const [isSignedIn, setIsSignedIn] = useState(false);
+//   const [userInfo, setUserInfo] = useState<User | null>(null);
+//   const router = useRouter();
+
+//   useEffect(() => {
+//     if (Platform.OS === 'android') {
+//       GoogleSignin.configure({
+//         webClientId: 'YOUR_WEB_CLIENT_ID', // from Google Cloud Console
+//         offlineAccess: false
+//       });
+//     }
+//     checkSignInStatus();
+//   }, []);
+
+//   const checkSignInStatus = async () => {
+//     try {
+//       const hasPlayServices = await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+//       if (!hasPlayServices) return;
+
+//       const isUserSignedIn = await GoogleSignin.isSignedInAsync();
+//       if (isUserSignedIn) {
+//         const currentUser = await GoogleSignin.getCurrentUser();
+//         setUserInfo(currentUser);
+//         setIsSignedIn(true);
+//       }
+//     } catch (error: any) {
+//       if (error.code === statusCodes.SIGN_IN_REQUIRED) {
+//         setIsSignedIn(false);
+//       } else {
+//         console.error('Error checking sign in status:', error);
+//       }
+//     }
+//   };
+
+//   const signIn = async () => {
+//     try {
+//       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+//       const signInResult = await GoogleSignin.signIn();
+      
+//       if (signInResult) {
+//         setUserInfo(signInResult);
+//         setIsSignedIn(true);
+//         await SecureStore.setItemAsync('user', JSON.stringify(signInResult));
+//         router.replace("/(tabs)");
+//       }
+//     } catch (error: any) {
+//       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+//         console.log('User cancelled sign in');
+//       } else if (error.code === statusCodes.IN_PROGRESS) {
+//         console.log('Sign in already in progress');
+//       } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+//         console.log('Play services not available');
+//       } else {
+//         console.error('Sign in error:', error);
+//       }
+//     }
+//   };
+
+//   const signOut = async () => {
+//     try {
+//       await GoogleSignin.revokeAccess();
+//       await GoogleSignin.signOut();
+//       await SecureStore.deleteItemAsync('user');
+//       setUserInfo(null);
+//       setIsSignedIn(false);
+//       router.replace("/login");
+//     } catch (error) {
+//       console.error('Error signing out:', error);
+//     }
+//   };
+
+//   return (
+//     <AuthContext.Provider value={{ isSignedIn, userInfo, signIn, signOut }}>
+//       {children}
+//     </AuthContext.Provider>
+//   );
+// }
+
+// export const useAuth = () => {
+//   const context = useContext(AuthContext);
+//   if (context === undefined) {
+//     throw new Error('useAuth must be used within an AuthProvider');
+//   }
+//   return context;
+// };

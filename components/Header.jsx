@@ -1,13 +1,20 @@
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Alert,
+} from "react-native";
 import React, { useState } from "react";
 import Feather from "@expo/vector-icons/Feather";
 import { useRouter } from "expo-router";
 import Modal from "react-native-modal";
-import { useAuth } from "@clerk/clerk-expo";
+import { useAuth } from "../providers/AuthProvider";
 
 const Header = () => {
   const router = useRouter();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const [isMenuVisible, setIsMenuVisible] = useState(false);
 
   const toggleMenu = () => setIsMenuVisible(!isMenuVisible);
@@ -22,7 +29,7 @@ const Header = () => {
         router.replace("/login");
       }, 100);
     } catch (error) {
-      console.error("Error signing out:", error.message);
+      console.error("Error signing out:", error);
       Alert.alert("Error", "Failed to sign out. Please try again.");
     }
   };
@@ -82,7 +89,7 @@ const Header = () => {
 
           <View style={styles.menuProfile}>
             <Image
-              source={require("../assets/images/logo.png")}
+              source={require("../assets/images/logoicon.png")}
               style={styles.menuLogo}
             />
             <Text style={styles.menuAppName}>Horizon Walls</Text>

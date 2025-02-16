@@ -1,29 +1,32 @@
 import { StyleSheet, Text, View, ActivityIndicator } from "react-native";
-import React, { useEffect } from "react";
-import { Redirect, useRouter } from "expo-router";
-import { useAuth } from "@clerk/clerk-expo";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "expo-router";
+import { useAuth } from "../providers/AuthProvider";
 
 export default function Index() {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    if (isLoaded) {
-      if (isSignedIn) {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isMounted) {
+      if (user) {
         router.replace("/(tabs)");
       } else {
         router.replace("/login");
       }
     }
-  }, [isLoaded, isSignedIn]);
+  }, [user, isMounted]);
 
   return (
     <View style={styles.container}>
       <ActivityIndicator size="large" color="#4285F4" />
       <Text style={styles.loadingText}>
-        {!isLoaded ? "Checking authentication..." : ""}
-        {isLoaded && !isSignedIn ? "Redirecting to login..." : ""}
-        {isLoaded && isSignedIn ? "Loading app..." : ""}
+        {!user ? "Redirecting to login..." : "Loading app..."}
       </Text>
     </View>
   );

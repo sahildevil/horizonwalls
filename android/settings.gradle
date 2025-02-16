@@ -21,7 +21,7 @@ extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
   }
 }
 
-rootProject.name = 'horizonwalls'
+rootProject.name = 'Horizon Walls'
 
 dependencyResolutionManagement {
   versionCatalogs {

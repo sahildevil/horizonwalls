@@ -1,18 +1,23 @@
 import { Stack } from "expo-router";
-import { AuthProvider } from "../providers/auth";
-import { useEffect } from "react";
-import { initializeMobileAds } from "../config/mobileAds";
+import { AuthProvider } from "../providers/AuthProvider";
+import { useEffect, useState } from "react";
 import * as Font from 'expo-font';
 import { fonts } from '../config/fonts';
 
 export default function RootLayout() {
+  const [isMounted, setIsMounted] = useState(false);
+
   useEffect(() => {
     async function loadFonts() {
       await Font.loadAsync(fonts);
     }
     loadFonts();
-    initializeMobileAds();
+    setIsMounted(true);
   }, []);
+
+  if (!isMounted) {
+    return null; // Render nothing until the layout is mounted
+  }
 
   return (
     <AuthProvider>

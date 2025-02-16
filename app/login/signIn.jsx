@@ -1,3 +1,4 @@
+import React from "react";
 import {
   StyleSheet,
   Text,
@@ -5,28 +6,27 @@ import {
   TouchableOpacity,
   ImageBackground,
   Image,
+  ActivityIndicator,
 } from "react-native";
-import React from "react";
-import { useOAuth } from "@clerk/clerk-expo";
-import { useRouter } from "expo-router";
-import * as WebBrowser from "expo-web-browser";
 import { StatusBar } from "expo-status-bar";
-
-WebBrowser.maybeCompleteAuthSession();
+import { useAuth } from "../../providers/AuthProvider";
+import { useRouter } from "expo-router";
 
 const SignIn = () => {
+  const { signIn, loading, user } = useAuth();
   const router = useRouter();
-  const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
 
-  const onSignInWithGoogle = async () => {
+  React.useEffect(() => {
+    if (user) {
+      router.replace("/(tabs)");
+    }
+  }, [user]);
+
+  const handleSignIn = async () => {
     try {
-      const { createdSessionId, setActive } = await startOAuthFlow();
-      if (createdSessionId && setActive) {
-        setActive({ session: createdSessionId });
-        router.push("/(tabs)");
-      }
-    } catch (err) {
-      console.error("OAuth error:", err);
+      await signIn();
+    } catch (error) {
+      console.error("Sign in error:", error);
     }
   };
 
@@ -41,8 +41,16 @@ const SignIn = () => {
         style={styles.logo}
       />
       <Text style={styles.title}>Horizon Walls</Text>
-      <TouchableOpacity style={styles.button} onPress={onSignInWithGoogle}>
-        <Text style={styles.buttonText}>Sign in with Google</Text>
+      <TouchableOpacity 
+        style={[styles.button, loading && styles.buttonDisabled]}
+        onPress={handleSignIn}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="white" />
+        ) : (
+          <Text style={styles.buttonText}>Continue with Google</Text>
+        )}
       </TouchableOpacity>
     </ImageBackground>
   );
@@ -94,5 +102,8 @@ const styles = StyleSheet.create({
     height: 100,
     marginBottom: 20,
     borderRadius: 20,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
 });

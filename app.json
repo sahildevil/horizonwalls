@@ -4,7 +4,7 @@
     "slug": "horizonwalls",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/logoicon.png",
     "scheme": "horizonwalls",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -13,7 +13,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-logo.png",
+        "foregroundImage": "./assets/images/adaptive-logoicon.png",
         "backgroundColor": "#ffffff"
       },
       "permissions": [
@@ -22,7 +22,7 @@
         "WRITE_EXTERNAL_STORAGE",
         "READ_EXTERNAL_STORAGE"
       ],
-      "package": "com.sahil1302.horizonwalls"
+      "package": "com.sahil.horizonwalls"
     },
     "web": {
       "bundler": "metro",
@@ -34,10 +34,11 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/logo.png",
+          "image": "./assets/images/logoicon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#000000"
+          
         }
       ],
       [
@@ -47,7 +48,15 @@
           "iosAppId": null
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "androidPackageName": "com.sahil.horizonwalls",
+          "playStoreSigningType": "debug",
+          "iosUrlScheme": "com.googleusercontent.apps.1234567890-fakeid"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
