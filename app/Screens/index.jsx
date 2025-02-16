@@ -28,6 +28,7 @@ import {
   AdEventType,
   RewardedAdEventType,
 } from "react-native-google-mobile-ads";
+import DownloadButton from "../../components/DownloadButton";
 
 const adUnitId = __DEV__
   ? TestIds.REWARDED
@@ -415,13 +416,14 @@ const Screens = () => {
       </TouchableOpacity>
 
       <BlurView intensity={100} tint="dark" style={styles.toolbar}>
-        <TouchableOpacity onPress={downloadImage} disabled={isAdLoading}>
+        <DownloadButton imageUrl={decodedUrl} wallpaperName={wallpaperName} />
+        {/* <TouchableOpacity onPress={downloadImage} disabled={isAdLoading}>
           {isAdLoading ? (
             <ActivityIndicator size="small" color="white" />
           ) : (
             <Feather name="download" size={24} color="white" />
           )}
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         {/* <TouchableOpacity onPress={setWallpaper}>
           <MaterialIcons name="now-wallpaper" size={24} color="white" />
         </TouchableOpacity> */}
