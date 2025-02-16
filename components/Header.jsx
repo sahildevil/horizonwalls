@@ -89,7 +89,7 @@ const Header = () => {
 
           <View style={styles.menuProfile}>
             <Image
-              source={require("../assets/images/logoicon.png")}
+              source={require("../assets/images/4.png")}
               style={styles.menuLogo}
             />
             <Text style={styles.menuAppName}>Horizon Walls</Text>
@@ -120,14 +120,15 @@ const styles = StyleSheet.create({
   container: {
     display: "flex",
     flexDirection: "row",
+    alignItems:'center',
     justifyContent: "space-between",
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingTop: 50,
     backgroundColor: "white",
   },
   heading: {
-    fontFamily: "Outfit-Bold",
-    fontSize: 24,
+    fontFamily: "Tan-Mon",
+    fontSize: 22,
   },
   modal: {
     margin: 0,
@@ -143,7 +144,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   menuTitle: {
-    fontFamily: "Outfit-Bold",
+    fontFamily: "Tan-Mon",
     fontSize: 20,
   },
   menuItem: {
@@ -176,7 +177,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   menuAppName: {
-    fontFamily: "Outfit-Bold",
+    fontFamily: "Tan-Mon",
     fontSize: 24,
     color: "#1a1a1a",
     textAlign: "center",

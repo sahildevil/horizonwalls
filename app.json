@@ -4,7 +4,7 @@
     "slug": "horizonwalls",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logoicon.png",
+    "icon": "./assets/images/4.png",
     "scheme": "horizonwalls",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,

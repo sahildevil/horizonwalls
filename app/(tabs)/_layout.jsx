@@ -30,7 +30,12 @@ export default function _layout() {
         options={{
           tabBarShowLabel: false,
           tabBarIcon: ({ color, focused }) => (
-            <Feather name="home" size={24} color={focused ? "tomato" : "black"} />
+            <Feather
+              name="home"
+              size={24}
+              color={focused ? "tomato" : "black"}
+              style={{ alignContent: "center" }}
+            />
           ),
         }}
       />
@@ -40,7 +45,11 @@ export default function _layout() {
         options={{
           tabBarShowLabel: false,
           tabBarIcon: ({ color, focused }) => (
-            <Feather name="grid" size={26} color={focused ? "tomato" : "black"} />
+            <Feather
+              name="grid"
+              size={25}
+              color={focused ? "tomato" : "black"}
+            />
           ),
         }}
       />
@@ -50,7 +59,11 @@ export default function _layout() {
         options={{
           tabBarShowLabel: false,
           tabBarIcon: ({ color, focused }) => (
-            <Octicons name="heart" size={24} color={focused ? "tomato" : "black"} />
+            <Octicons
+              name="heart"
+              size={24}
+              color={focused ? "tomato" : "black"}
+            />
           ),
         }}
       />

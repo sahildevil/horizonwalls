@@ -41,7 +41,7 @@ const SignIn = () => {
         style={styles.logo}
       />
       <Text style={styles.title}>Horizon Walls</Text>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[styles.button, loading && styles.buttonDisabled]}
         onPress={handleSignIn}
         disabled={loading}

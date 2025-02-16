@@ -82,7 +82,7 @@ const Home = () => {
   if (loading) {
     return (
       <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#3498db" />
+        <ActivityIndicator size="large" color="tomato" />
       </View>
     );
   }
@@ -156,6 +156,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "white",
   },
   errorContainer: {
     flex: 1,

@@ -47,7 +47,7 @@ const AboutUs = () => {
 
       <ScrollView style={styles.content}>
         <Image
-          source={require("../../assets/images/logo.png")}
+          source={require("../../assets/images/4.png")}
           style={styles.logo}
         />
         <Text style={styles.appName}>Horizon Walls</Text>
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: "Outfit-Bold",
-    fontSize: 28,
+    fontSize: 25,
     color: "#1a1a1a",
   },
   content: {
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   appName: {
-    fontFamily: "Outfit-Bold",
+    fontFamily: "Tan-Mon",
     fontSize: 24,
     textAlign: "center",
     color: "#1a1a1a",
