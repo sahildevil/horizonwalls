@@ -19,6 +19,12 @@ Horizon Walls is a cross-platform **wallpaper discovery app** built using **Reac
 
 ## Backend Repo Link - https://github.com/sahildevil/horizonwalls-server
 ## Admin Panel Repo - https://github.com/sahildevil/horizonwalls-admin
+![1](https://github.com/user-attachments/assets/447fdedc-23ca-4cee-9dfc-7911e9b4f0bc)
+![2](https://github.com/user-attachments/assets/8ecfadf5-7a75-4394-95b5-b9f981616779)
+![3](https://github.com/user-attachments/assets/1cfc6552-d628-4495-bc9f-75247ccedc13)
+![4](https://github.com/user-attachments/assets/e0bae521-9358-4fa2-ac64-5727dc5769c7)
+![5](https://github.com/user-attachments/assets/9094e80c-e1c2-4209-b803-9fc1e2d7f76e)
+
 ## Installation & Setup
 ### Backend
 1. Clone the repository:
