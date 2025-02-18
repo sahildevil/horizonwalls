@@ -95,19 +95,38 @@ const Header = () => {
             <Text style={styles.menuAppName}>Horizon Walls</Text>
           </View>
 
-          {menuItems.map((item, index) => (
+          {/* Wrap everything in a View with flex: 1 to push sign-out button down */}
+          <View style={styles.menuContent}>
+            <View style={styles.menuBox}>
+              {menuItems
+                .filter((item) => item.label !== "Sign Out") // Exclude Sign Out from this box
+                .map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.menuItem}
+                    onPress={() => {
+                      item.onPress();
+                      toggleMenu();
+                    }}
+                  >
+                    <Feather name={item.icon} size={20} color="black" />
+                    <Text style={styles.menuItemText}>{item.label}</Text>
+                  </TouchableOpacity>
+                ))}
+            </View>
+
+            {/* Sign Out button placed separately at the bottom */}
             <TouchableOpacity
-              key={index}
-              style={[styles.menuItem, item.style]}
+              style={styles.signOutButton}
               onPress={() => {
-                item.onPress();
+                handleSignOut();
                 toggleMenu();
               }}
             >
-              <Feather name={item.icon} size={20} color="black" />
-              <Text style={styles.menuItemText}>{item.label}</Text>
+              <Feather name="log-out" size={20} color="black" />
+              <Text style={styles.menuItemText}>Sign Out</Text>
             </TouchableOpacity>
-          ))}
+          </View>
         </View>
       </Modal>
     </View>
@@ -120,7 +139,7 @@ const styles = StyleSheet.create({
   container: {
     display: "flex",
     flexDirection: "row",
-    alignItems:'center',
+    alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 12,
     paddingTop: 50,
@@ -129,6 +148,10 @@ const styles = StyleSheet.create({
   heading: {
     fontFamily: "Tan-Mon",
     fontSize: 22,
+  },
+  menuContent: {
+    flex: 1, // Makes content fill available space
+    justifyContent: "space-between", // Ensures Sign Out stays at the bottom
   },
   modal: {
     margin: 0,
@@ -151,8 +174,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    paddingHorizontal: 10,
+    borderBottomWidth: 0, // Remove borders
   },
   menuItemText: {
     fontFamily: "Outfit-Regular",
@@ -160,8 +183,19 @@ const styles = StyleSheet.create({
     marginLeft: 15,
   },
   signOutButton: {
-    marginTop: "auto",
-    borderBottomWidth: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    marginTop: 20,
+    width:'50%' // Adds space between menu items and Sign Out
   },
   menuProfile: {
     alignItems: "center",
@@ -185,5 +219,17 @@ const styles = StyleSheet.create({
   closeButton: {
     alignSelf: "flex-end",
     padding: 8,
+  },
+  menuBox: {
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 5,
+    elevation: 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    alignSelf: "stretch", // Ensures it stretches within the parent
   },
 });

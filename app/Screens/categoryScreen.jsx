@@ -5,12 +5,16 @@ import {
   ActivityIndicator,
   Text,
   Dimensions,
+  TouchableOpacity,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
 import ImageCard from "../../components/ImageCard";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 //const API_URL = "http://192.168.1.11:8000/api/wallpapers";
-const API_URL = "https://horizonwalls-server.vercel.app/api/wallpapers";
+const API_URL = process.env.EXPO_PUBLIC_API_URL + "/wallpapers";
+
 const { width } = Dimensions.get("window");
 const CARD_MARGIN = 8;
 const CONTAINER_PADDING = 16;
@@ -27,7 +31,7 @@ const CategoryDetails = () => {
   const [wallpapers, setWallpapers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const router = useRouter();
   useEffect(() => {
     const fetchCategoryWallpapers = async () => {
       try {
@@ -84,7 +88,21 @@ const CategoryDetails = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{name}</Text>
+      <View
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          marginLeft: 10,
+        }}
+      >
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="chevron-back-outline" size={24} color="#1a1a1a" />
+        </TouchableOpacity>
+
+        <Text style={styles.title}>{name}</Text>
+      </View>
+
       <FlatList
         data={wallpapers}
         keyExtractor={(item) => item._id}
