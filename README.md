@@ -17,7 +17,7 @@ Horizon Walls is a cross-platform **wallpaper discovery app** built using **Reac
 - **Authentication:** Google OAuth 2.0, NextAuth
 - **Monetization:** Google AdMob
 
-## Backend Repo Link - https://github.com/sahildevil/horizonwalls-server
+## Backend Repo Link - [https://github.com/sahildevil/horizonwalls-server](https://github.com/sahildevil/horizonwalls_public_server)
 ## Admin Panel Repo - https://github.com/sahildevil/horizonwalls-admin
 ![1](https://github.com/user-attachments/assets/447fdedc-23ca-4cee-9dfc-7911e9b4f0bc)
 ![2](https://github.com/user-attachments/assets/8ecfadf5-7a75-4394-95b5-b9f981616779)
