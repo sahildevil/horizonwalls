@@ -51,7 +51,7 @@ const AboutUs = () => {
           style={styles.logo}
         />
         <Text style={styles.appName}>Horizon Walls</Text>
-        <Text style={styles.version}>Version 1.0.0</Text>
+        <Text style={styles.version}>Version 1.0.1</Text>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>About the Developer</Text>

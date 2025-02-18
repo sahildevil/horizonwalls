@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 const { width } = Dimensions.get("window");
 const API_URL = "https://horizonwalls-server.vercel.app/api/wallpapers";
-// const API_URL = "http://192.168.1.11:8000/api/wallpapers"; // Update with your IP
+//const API_URL = "http://192.168.1.11:8000/api/wallpapers"; // Update with your IP
 
 const SearchScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");

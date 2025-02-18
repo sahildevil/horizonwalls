@@ -2,7 +2,7 @@
   "expo": {
     "name": "Horizon Walls",
     "slug": "horizonwalls",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/4.png",
     "scheme": "horizonwalls",
@@ -20,7 +20,10 @@
         "WRITE_EXTERNAL_STORAGE",
         "READ_EXTERNAL_STORAGE",
         "MEDIA_LIBRARY",
-        "MEDIA_LIBRARY_WRITE_ONLY"
+        "MEDIA_LIBRARY_WRITE_ONLY",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_MEDIA_LOCATION"
       ],
       "package": "com.sahil.horizonwalls",
       "targetSdkVersion": 33
@@ -65,6 +68,14 @@
           "isAccessMediaLocationEnabled": true
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "0cbdfc73-8682-448c-ad50-eb6b5bc55971"
+      }
+    }
   }
 }

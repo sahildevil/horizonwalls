@@ -212,59 +212,116 @@ const DownloadButton = ({ imageUrl, wallpaperName }) => {
     resetAdState,
   } = useRewardedAd();
 
+  // const handleDownload = async () => {
+  //   if (!imageUrl) {
+  //     console.log("No URL available for download");
+  //     Alert.alert("Error", "No image URL available for download");
+  //     return;
+  //   }
+
+  //   try {
+  //     setDownloadStarted(true);
+  //     console.log("Starting download process...");
+
+  //     const extension = getFileExtension(imageUrl);
+  //     const baseFileName = wallpaperName
+  //       ? sanitizeFileName(wallpaperName)
+  //       : "wallpaper_" + new Date().getTime();
+  //     const filename = `${baseFileName}.${extension}`;
+
+  //     // Download to cache directory first
+  //     const fileUri = `${FileSystem.cacheDirectory}${filename}`;
+  //     const downloadResult = await FileSystem.downloadAsync(imageUrl, fileUri);
+
+  //     if (Platform.OS === "android" && Platform.Version >= 29) {
+  //       // For Android 10 and above, use MediaLibrary without permissions
+  //       await MediaLibrary.saveToLibraryAsync(downloadResult.uri);
+
+  //       // Show toast notification instead of alert for better UX
+  //       ToastAndroid.show("Wallpaper saved successfully!", ToastAndroid.SHORT);
+  //     } else {
+  //       // For older Android versions, we still need permissions
+  //       const { status } = await MediaLibrary.requestPermissionsAsync();
+  //       if (status === "granted") {
+  //         await MediaLibrary.saveToLibraryAsync(downloadResult.uri);
+  //         ToastAndroid.show(
+  //           "Wallpaper saved successfully!",
+  //           ToastAndroid.SHORT
+  //         );
+  //       } else {
+  //         Alert.alert(
+  //           "Permission needed",
+  //           "Please allow storage permission to save wallpapers"
+  //         );
+  //       }
+  //     }
+
+  //     // Clean up the cached file
+  //     await FileSystem.deleteAsync(fileUri, { idempotent: true });
+  //   } catch (error) {
+  //     console.error("Download error:", error);
+  //     Alert.alert(
+  //       "Download Failed",
+  //       "There was an error downloading the wallpaper"
+  //     );
+  //   } finally {
+  //     setDownloadStarted(false);
+  //     setIsRewarded(false);
+  //     setDownloadPending(false);
+  //     resetAdState();
+  //   }
+  // };
   const handleDownload = async () => {
     if (!imageUrl) {
       console.log("No URL available for download");
       Alert.alert("Error", "No image URL available for download");
       return;
     }
-
+  
     try {
       setDownloadStarted(true);
       console.log("Starting download process...");
-
+  
       const extension = getFileExtension(imageUrl);
       const baseFileName = wallpaperName
         ? sanitizeFileName(wallpaperName)
         : "wallpaper_" + new Date().getTime();
       const filename = `${baseFileName}.${extension}`;
-
+  
       // Download to cache directory first
       const fileUri = `${FileSystem.cacheDirectory}${filename}`;
       const downloadResult = await FileSystem.downloadAsync(imageUrl, fileUri);
-
-      if (Platform.OS === "android" && Platform.Version >= 29) {
-        // For Android 10 and above, use MediaLibrary without permissions
-        await MediaLibrary.saveToLibraryAsync(downloadResult.uri);
-
-        // Show toast notification instead of alert for better UX
-        ToastAndroid.show("Wallpaper saved successfully!", ToastAndroid.SHORT);
-      } else {
-        // For older Android versions, we still need permissions
-        const { status } = await MediaLibrary.requestPermissionsAsync();
-        if (status === "granted") {
+  
+      if (Platform.OS === "android") {
+        if (Platform.Version >= 31) {
+          // ✅ Android 12+ (API 31+) - Save directly without permission
           await MediaLibrary.saveToLibraryAsync(downloadResult.uri);
-          ToastAndroid.show(
-            "Wallpaper saved successfully!",
-            ToastAndroid.SHORT
-          );
+          ToastAndroid.show("Wallpaper saved successfully!", ToastAndroid.SHORT);
         } else {
-          Alert.alert(
-            "Permission needed",
-            "Please allow storage permission to save wallpapers"
-          );
+          // 🔹 Android 11 and below - Request permission first
+          const { status } = await MediaLibrary.requestPermissionsAsync();
+          if (status === "granted") {
+            await MediaLibrary.saveToLibraryAsync(downloadResult.uri);
+            ToastAndroid.show("Wallpaper saved successfully!", ToastAndroid.SHORT);
+          } else {
+            Alert.alert(
+              "Permission needed",
+              "Please allow storage permission to save wallpapers"
+            );
+          }
         }
+      } else {
+        // iOS - Just save without asking (since permission is handled automatically)
+        await MediaLibrary.saveToLibraryAsync(downloadResult.uri);
       }
-
+  
       // Clean up the cached file
       await FileSystem.deleteAsync(fileUri, { idempotent: true });
     } catch (error) {
       console.error("Download error:", error);
-      Alert.alert(
-        "Download Failed",
-        "There was an error downloading the wallpaper"
-      );
+      Alert.alert("Download Failed", "There was an error downloading the wallpaper");
     } finally {
+      // ✅ Ensure UI updates correctly
       setDownloadStarted(false);
       setIsRewarded(false);
       setDownloadPending(false);
