@@ -1,48 +1,81 @@
-# Welcome to your Expo app 👋
+# Horizon Walls
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Horizon Walls is a cross-platform **wallpaper discovery app** built using **React Native**. It allows users to browse and download high-quality wallpapers, featuring secure authentication, an efficient admin panel, and monetization via Google AdMob.
 
-## Get started
+## Features
+- **Google OAuth 2.0 Authentication** for seamless user login.
+- **React Native UI** with CSS-based styling for a smooth user experience.
+- **MongoDB, Node.js, and Express.js backend** for storing and fetching wallpapers efficiently.
+- **Next.js Admin Panel** with Tailwind CSS for managing wallpapers.
+- **NextAuth for Admin Authentication** to ensure secure access.
+- **Google AdMob Integration** for in-app monetization.
 
-1. Install dependencies
+## Tech Stack
+- **Frontend:** React Native, CSS
+- **Backend:** Node.js, Express.js, MongoDB
+- **Admin Panel:** Next.js, Tailwind CSS, NextAuth
+- **Authentication:** Google OAuth 2.0, NextAuth
+- **Monetization:** Google AdMob
 
-   ```bash
+## Backend Repo Link - https://github.com/sahildevil/horizonwalls-server
+## Admin Panel Repo - https://github.com/sahildevil/horizonwalls-admin
+## Installation & Setup
+### Backend
+1. Clone the repository:
+   ```sh
+   git clone https://github.com/your-repo/horizon-walls.git
+   cd horizon-walls/backend
+   ```
+2. Install dependencies:
+   ```sh
    npm install
    ```
-
-2. Start the app
-
-   ```bash
-    npx expo start
+3. Set up environment variables (`.env` file):
+   ```sh
+   MONGO_URI=your_mongodb_uri
+   JWT_SECRET=your_jwt_secret
+   ```
+4. Start the backend server:
+   ```sh
+   npm start
    ```
 
-In the output, you'll find options to open the app in a
+### Frontend (React Native App)
+1. Navigate to the frontend folder:
+   ```sh
+   cd ../frontend
+   ```
+2. Install dependencies:
+   ```sh
+   npm install
+   ```
+3. Start the React Native development server:
+   ```sh
+   npm start
+   ```
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### Admin Panel (Next.js)
+1. Navigate to the admin panel folder:
+   ```sh
+   cd ../admin
+   ```
+2. Install dependencies:
+   ```sh
+   npm install
+   ```
+3. Start the admin panel:
+   ```sh
+   npm run dev
+   ```
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Contributing
+Feel free to fork the repository and submit pull requests to enhance the project.
 
-## Get a fresh project
+## License
+This project is licensed under the MIT License.
 
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
+## Contact
+For any queries or support, reach out via sahilkumar.sk148@gmail.com.
 
 Join our community of developers creating universal apps.
 
