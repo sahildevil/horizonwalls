@@ -12,7 +12,8 @@ import { useLocalSearchParams } from "expo-router";
 import ImageCard from "../../components/ImageCard";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-//const API_URL = "http://192.168.1.11:8000/api/wallpapers";
+import { useTheme } from "../../providers/ThemeProvider";
+
 const API_URL = process.env.EXPO_PUBLIC_API_URL + "/wallpapers";
 
 const { width } = Dimensions.get("window");
@@ -28,10 +29,12 @@ const CARD_HEIGHT = (CARD_WIDTH * 16) / 9;
 
 const CategoryDetails = () => {
   const { id, name } = useLocalSearchParams();
+  const { isDarkTheme, currentTheme } = useTheme();
   const [wallpapers, setWallpapers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const router = useRouter();
+
   useEffect(() => {
     const fetchCategoryWallpapers = async () => {
       try {
@@ -72,22 +75,33 @@ const CategoryDetails = () => {
 
   if (loading) {
     return (
-      <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#3498db" />
+      <View
+        style={[styles.loader, { backgroundColor: currentTheme.background }]}
+      >
+        <ActivityIndicator size="large" color={currentTheme.primary} />
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Error loading wallpapers: {error}</Text>
+      <View
+        style={[
+          styles.errorContainer,
+          { backgroundColor: currentTheme.background },
+        ]}
+      >
+        <Text style={[styles.errorText, { color: currentTheme.text }]}>
+          Error loading wallpapers: {error}
+        </Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[styles.container, { backgroundColor: currentTheme.background }]}
+    >
       <View
         style={{
           display: "flex",
@@ -97,10 +111,14 @@ const CategoryDetails = () => {
         }}
       >
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back-outline" size={24} color="#1a1a1a" />
+          <Ionicons
+            name="chevron-back-outline"
+            size={24}
+            color={currentTheme.text}
+          />
         </TouchableOpacity>
 
-        <Text style={styles.title}>{name}</Text>
+        <Text style={[styles.title, { color: currentTheme.text }]}>{name}</Text>
       </View>
 
       <FlatList
@@ -111,7 +129,10 @@ const CategoryDetails = () => {
             <ImageCard
               imageUrl={item.image}
               wallpaperName={item.name}
-              style={styles.card}
+              style={[
+                styles.card,
+                { backgroundColor: currentTheme.cardBackground },
+              ]}
             />
           </View>
         )}
@@ -126,7 +147,6 @@ const CategoryDetails = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "white",
     paddingTop: 60,
   },
   title: {
@@ -134,7 +154,6 @@ const styles = StyleSheet.create({
     fontFamily: "Outfit-Bold",
     marginHorizontal: 20,
     marginBottom: 0,
-    color: "#1a1a1a",
   },
   listContainer: {
     paddingHorizontal: CONTAINER_PADDING,
@@ -153,7 +172,6 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   errorText: {
-    color: "red",
     textAlign: "center",
     fontFamily: "Outfit-Regular",
   },
@@ -162,7 +180,6 @@ const styles = StyleSheet.create({
     height: CARD_HEIGHT,
     borderRadius: 15,
     overflow: "hidden",
-    backgroundColor: "#f0f0f0",
     elevation: 3,
     shadowColor: "#000",
     shadowOffset: {

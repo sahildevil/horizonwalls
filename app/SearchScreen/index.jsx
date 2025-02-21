@@ -12,13 +12,13 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../../providers/ThemeProvider";
 
 const { width } = Dimensions.get("window");
 const API_URL = process.env.EXPO_PUBLIC_API_URL + "/wallpapers";
 
-//const API_URL = "http://192.168.1.11:8000/api/wallpapers"; // Update with your IP
-
 const SearchScreen = () => {
+  const { isDarkTheme, currentTheme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [wallpapers, setWallpapers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -72,7 +72,10 @@ const SearchScreen = () => {
 
   const renderWallpaperItem = ({ item }) => (
     <TouchableOpacity
-      style={styles.wallpaperItem}
+      style={[
+        styles.wallpaperItem,
+        { backgroundColor: currentTheme.cardBackground },
+      ]}
       onPress={() => {
         router.push({
           pathname: "/Screens",
@@ -91,35 +94,54 @@ const SearchScreen = () => {
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View
+      style={[styles.container, { backgroundColor: currentTheme.background }]}
+    >
+      <View
+        style={[styles.header, { borderBottomColor: currentTheme.borderColor }]}
+      >
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="chevron-back-outline" size={24} color="#1a1a1a" />
+          <Ionicons
+            name="chevron-back-outline"
+            size={24}
+            color={currentTheme.text}
+          />
         </TouchableOpacity>
-        <Text style={styles.title}>Search</Text>
+        <Text style={[styles.title, { color: currentTheme.text }]}>Search</Text>
       </View>
       <TextInput
-        style={[styles.searchInput, searchQuery && styles.searchInputActive]}
+        style={[
+          styles.searchInput,
+          {
+            backgroundColor: currentTheme.cardBackground,
+            color: currentTheme.text,
+          },
+          searchQuery && { borderColor: currentTheme.primary, borderWidth: 2 },
+        ]}
         placeholder="Search wallpapers by name..."
         value={searchQuery}
         onChangeText={handleSearch}
-        placeholderTextColor="#666"
+        placeholderTextColor={currentTheme.secondary}
       />
 
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#0000ff" />
+          <ActivityIndicator size="large" color={currentTheme.primary} />
         </View>
       ) : error ? (
         <View style={styles.centerContainer}>
-          <Text style={styles.errorText}>{error}</Text>
+          <Text style={[styles.errorText, { color: currentTheme.text }]}>
+            {error}
+          </Text>
         </View>
       ) : wallpapers.length === 0 ? (
         <View style={styles.centerContainer}>
-          <Text style={styles.noResultsText}>
+          <Text
+            style={[styles.noResultsText, { color: currentTheme.secondary }]}
+          >
             {searchQuery ? "No wallpapers found" : "Start typing to search..."}
           </Text>
         </View>
@@ -142,7 +164,6 @@ export default SearchScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
     paddingTop: 40,
     paddingHorizontal: 16,
   },
@@ -152,6 +173,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 10,
     paddingHorizontal: 10,
+    borderBottomWidth: 1,
   },
   backButton: {
     padding: 8,
@@ -161,7 +183,6 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: "Outfit-Bold",
     fontSize: 28,
-    color: "#1a1a1a",
     flex: 1,
   },
   searchInput: {
@@ -172,12 +193,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 20,
     fontSize: 16,
-    backgroundColor: "#f8f8f8",
     fontFamily: "Outfit-Regular",
-  },
-  searchInputActive: {
-    borderColor: "#4285F4", // Google Blue accent color
-    borderWidth: 2,
   },
   wallpaperList: {
     paddingBottom: 20,
@@ -189,7 +205,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderRadius: 15,
     overflow: "hidden",
-    backgroundColor: "#f0f0f0",
     elevation: 3,
     shadowColor: "#000",
     shadowOffset: {
@@ -222,13 +237,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   errorText: {
-    color: "red",
     fontSize: 16,
     textAlign: "center",
     fontFamily: "Outfit-Regular",
   },
   noResultsText: {
-    color: "#666",
     fontSize: 16,
     textAlign: "center",
     fontFamily: "Outfit-Regular",

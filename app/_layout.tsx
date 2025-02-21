@@ -3,7 +3,7 @@ import { AuthProvider } from "../providers/AuthProvider";
 import { useEffect, useState } from "react";
 import * as Font from 'expo-font';
 import { fonts } from '../config/fonts';
-
+import { ThemeProvider } from "../providers/ThemeProvider";
 export default function RootLayout() {
   const [isMounted, setIsMounted] = useState(false);
 
@@ -20,6 +20,7 @@ export default function RootLayout() {
   }
 
   return (
+    <ThemeProvider>
     <AuthProvider>
       <Stack screenOptions={{ headerShown: false }} initialRouteName="index">
         <Stack.Screen name="index" />
@@ -31,5 +32,6 @@ export default function RootLayout() {
         <Stack.Screen name="ContactUs" />
       </Stack>
     </AuthProvider>
+    </ThemeProvider>
   );
 }

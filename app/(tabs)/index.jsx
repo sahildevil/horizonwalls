@@ -6,11 +6,13 @@ import {
   Text,
   Dimensions,
   RefreshControl,
+  TouchableOpacity,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import Header from "../../components/Header";
 import ImageCard from "../../components/ImageCard";
 import { StatusBar } from "expo-status-bar";
+import { useTheme } from "../../providers/ThemeProvider";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL + "/wallpapers";
 //const API_URL = "http://192.168.1.11:8000/api/wallpapers";
@@ -25,6 +27,7 @@ const CARD_WIDTH =
 const CARD_HEIGHT = (CARD_WIDTH * 16) / 9;
 
 const Home = () => {
+  const { isDarkTheme, currentTheme } = useTheme();
   const [wallpapers, setWallpapers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -95,24 +98,45 @@ const Home = () => {
 
   if (loading) {
     return (
-      <View style={styles.loader}>
-        <StatusBar style="dark" />
-        <ActivityIndicator size="large" color="tomato" />
+      <View
+        style={[styles.loader, { backgroundColor: currentTheme.background }]}
+      >
+        <StatusBar style={isDarkTheme ? "light" : "dark"} />
+        <ActivityIndicator
+          size="large"
+          color={isDarkTheme ? "#fff" : "tomato"}
+        />
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Error loading wallpapers: {error}</Text>
+      <View
+        style={[
+          styles.errorContainer,
+          { backgroundColor: currentTheme.background },
+        ]}
+      >
+        <StatusBar style={isDarkTheme ? "light" : "dark"} />
+        <Text style={[styles.errorText, { color: currentTheme.text }]}>
+          Error loading wallpapers: {error}
+        </Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={() => fetchWallpapers(1, true)}
+        >
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
+    <View
+      style={[styles.container, { backgroundColor: currentTheme.background }]}
+    >
+      <StatusBar style={isDarkTheme ? "light" : "dark"} />
       <Header />
       <FlatList
         data={wallpapers}
@@ -122,7 +146,10 @@ const Home = () => {
             <ImageCard
               imageUrl={item.image}
               wallpaperName={item.name}
-              style={styles.card}
+              style={[
+                styles.card,
+                { backgroundColor: currentTheme.cardBackground },
+              ]}
             />
           </View>
         )}
@@ -190,6 +217,18 @@ const styles = StyleSheet.create({
     color: "red",
     textAlign: "center",
     fontFamily: "Outfit-Regular",
+  },
+  retryButton: {
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: "tomato",
+    borderRadius: 5,
+  },
+  retryButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontFamily: "Outfit-Bold",
   },
 });
 

@@ -11,6 +11,8 @@ import React, { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter, useNavigation } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
+import { useTheme } from "../../providers/ThemeProvider";
+import { StatusBar } from "expo-status-bar";
 
 const { width } = Dimensions.get("window");
 const CARD_MARGIN = 8;
@@ -25,6 +27,7 @@ const CARD_WIDTH =
 const CARD_HEIGHT = (CARD_WIDTH * 16) / 9;
 
 const Favs = () => {
+  const { isDarkTheme, currentTheme } = useTheme();
   const [favorites, setFavorites] = useState([]);
   const router = useRouter();
 
@@ -49,38 +52,54 @@ const Favs = () => {
     }
   };
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={[styles.card, { margin: CARD_MARGIN }]}
-      onPress={() => {
-        router.push({
-          pathname: "/Screens",
-          params: {
-            imageUrl: encodeURIComponent(item.imageUrl),
-            name: encodeURIComponent(item.name),
-          },
-        });
-      }}
-    >
-      <Image
-        source={{ uri: item.imageUrl }}
-        style={styles.image}
-        resizeMode="cover"
-      />
-    </TouchableOpacity>
-  );
-
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Favorite Wallpapers</Text>
+    <View
+      style={[styles.container, { backgroundColor: currentTheme.background }]}
+    >
+      <StatusBar style={isDarkTheme ? "light" : "dark"} />
+      <Text style={[styles.title, { color: currentTheme.text }]}>
+        Favorite Wallpapers
+      </Text>
       {favorites.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No favorite wallpapers yet</Text>
+        <View
+          style={[
+            styles.emptyContainer,
+            { backgroundColor: currentTheme.background },
+          ]}
+        >
+          <Text style={[styles.emptyText, { color: currentTheme.secondary }]}>
+            No favorite wallpapers yet
+          </Text>
         </View>
       ) : (
         <FlatList
           data={favorites}
-          renderItem={renderItem}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[
+                styles.card,
+                {
+                  margin: CARD_MARGIN,
+                  backgroundColor: currentTheme.cardBackground,
+                },
+              ]}
+              onPress={() => {
+                router.push({
+                  pathname: "/Screens",
+                  params: {
+                    imageUrl: encodeURIComponent(item.imageUrl),
+                    name: encodeURIComponent(item.name),
+                  },
+                });
+              }}
+            >
+              <Image
+                source={{ uri: item.imageUrl }}
+                style={styles.image}
+                resizeMode="cover"
+              />
+            </TouchableOpacity>
+          )}
           keyExtractor={(item) => item.addedAt}
           numColumns={2}
           contentContainerStyle={styles.listContainer}

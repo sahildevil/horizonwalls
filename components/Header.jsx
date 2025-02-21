@@ -11,10 +11,13 @@ import Feather from "@expo/vector-icons/Feather";
 import { useRouter } from "expo-router";
 import Modal from "react-native-modal";
 import { useAuth } from "../providers/AuthProvider";
+import { useTheme } from "../providers/ThemeProvider";
+import { StatusBar } from "expo-status-bar";
 
 const Header = () => {
   const router = useRouter();
   const { signOut, user } = useAuth();
+  const { isDarkTheme, toggleTheme, currentTheme } = useTheme();
   const [isMenuVisible, setIsMenuVisible] = useState(false);
 
   const toggleMenu = () => setIsMenuVisible(!isMenuVisible);
@@ -56,6 +59,11 @@ const Header = () => {
       onPress: () => console.log("Share App"),
     },
     {
+      icon: "moon",
+      label: isDarkTheme ? "Light Theme" : "Dark Theme",
+      onPress: toggleTheme,
+    },
+    {
       icon: "log-out",
       label: "Sign Out",
       onPress: handleSignOut,
@@ -64,72 +72,107 @@ const Header = () => {
   ];
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity onPress={toggleMenu}>
-        <Feather name="menu" size={24} color="black" />
-      </TouchableOpacity>
-      <Text style={styles.heading}>Horizon Walls</Text>
-      <TouchableOpacity onPress={() => router.push("/SearchScreen")}>
-        <Feather name="search" size={24} color="black" />
-      </TouchableOpacity>
-
-      <Modal
-        isVisible={isMenuVisible}
-        onBackdropPress={toggleMenu}
-        animationIn="slideInLeft"
-        animationOut="slideOutLeft"
-        style={styles.modal}
+    <>
+      <StatusBar style={isDarkTheme ? "light" : "dark"} />
+      <View
+        style={[styles.container, { backgroundColor: currentTheme.background }]}
       >
-        <View style={styles.menuContainer}>
-          <View style={styles.menuHeader}>
-            <TouchableOpacity onPress={toggleMenu} style={styles.closeButton}>
-              <Feather name="x" size={24} color="black" />
-            </TouchableOpacity>
-          </View>
+        <TouchableOpacity onPress={toggleMenu}>
+          <Feather name="menu" size={24} color={currentTheme.text} />
+        </TouchableOpacity>
+        <Text style={[styles.heading, { color: currentTheme.text }]}>
+          Horizon Walls
+        </Text>
+        <TouchableOpacity onPress={() => router.push("/SearchScreen")}>
+          <Feather name="search" size={24} color={currentTheme.text} />
+        </TouchableOpacity>
 
-          <View style={styles.menuProfile}>
-            <Image
-              source={require("../assets/images/4.png")}
-              style={styles.menuLogo}
-            />
-            <Text style={styles.menuAppName}>Horizon Walls</Text>
-          </View>
-
-          {/* Wrap everything in a View with flex: 1 to push sign-out button down */}
-          <View style={styles.menuContent}>
-            <View style={styles.menuBox}>
-              {menuItems
-                .filter((item) => item.label !== "Sign Out") // Exclude Sign Out from this box
-                .map((item, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.menuItem}
-                    onPress={() => {
-                      item.onPress();
-                      toggleMenu();
-                    }}
-                  >
-                    <Feather name={item.icon} size={20} color="black" />
-                    <Text style={styles.menuItemText}>{item.label}</Text>
-                  </TouchableOpacity>
-                ))}
+        <Modal
+          isVisible={isMenuVisible}
+          onBackdropPress={toggleMenu}
+          animationIn="slideInLeft"
+          animationOut="slideOutLeft"
+          style={styles.modal}
+        >
+          <View
+            style={[
+              styles.menuContainer,
+              { backgroundColor: currentTheme.background },
+            ]}
+          >
+            <View style={styles.menuHeader}>
+              <TouchableOpacity onPress={toggleMenu} style={styles.closeButton}>
+                <Feather name="x" size={24} color={currentTheme.text} />
+              </TouchableOpacity>
             </View>
 
-            {/* Sign Out button placed separately at the bottom */}
-            <TouchableOpacity
-              style={styles.signOutButton}
-              onPress={() => {
-                handleSignOut();
-                toggleMenu();
-              }}
-            >
-              <Feather name="log-out" size={20} color="black" />
-              <Text style={styles.menuItemText}>Sign Out</Text>
-            </TouchableOpacity>
+            <View style={styles.menuProfile}>
+              <Image
+                source={require("../assets/images/4.png")}
+                style={styles.menuLogo}
+              />
+              <Text style={[styles.menuAppName, { color: currentTheme.text }]}>
+                Horizon Walls
+              </Text>
+            </View>
+
+            <View style={styles.menuContent}>
+              <View
+                style={[
+                  styles.menuBox,
+                  { backgroundColor: currentTheme.cardBackground },
+                ]}
+              >
+                {menuItems
+                  .filter((item) => item.label !== "Sign Out")
+                  .map((item, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={styles.menuItem}
+                      onPress={() => {
+                        item.onPress();
+                        toggleMenu();
+                      }}
+                    >
+                      <Feather
+                        name={item.icon}
+                        size={20}
+                        color={currentTheme.text}
+                      />
+                      <Text
+                        style={[
+                          styles.menuItemText,
+                          { color: currentTheme.text },
+                        ]}
+                      >
+                        {item.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+              </View>
+
+              <TouchableOpacity
+                style={[
+                  styles.signOutButton,
+                  { backgroundColor: currentTheme.cardBackground },
+                ]}
+                onPress={() => {
+                  handleSignOut();
+                  toggleMenu();
+                }}
+              >
+                <Feather name="log-out" size={20} color={currentTheme.text} />
+                <Text
+                  style={[styles.menuItemText, { color: currentTheme.text }]}
+                >
+                  Sign Out
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </Modal>
-    </View>
+        </Modal>
+      </View>
+    </>
   );
 };
 
@@ -143,21 +186,19 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 12,
     paddingTop: 50,
-    backgroundColor: "white",
   },
   heading: {
     fontFamily: "Tan-Mon",
     fontSize: 22,
   },
   menuContent: {
-    flex: 1, // Makes content fill available space
-    justifyContent: "space-between", // Ensures Sign Out stays at the bottom
+    flex: 1,
+    justifyContent: "space-between",
   },
   modal: {
     margin: 0,
   },
   menuContainer: {
-    backgroundColor: "white",
     width: "70%",
     height: "100%",
     paddingVertical: 20,
@@ -166,16 +207,11 @@ const styles = StyleSheet.create({
   menuHeader: {
     marginBottom: 10,
   },
-  menuTitle: {
-    fontFamily: "Tan-Mon",
-    fontSize: 20,
-  },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 15,
     paddingHorizontal: 10,
-    borderBottomWidth: 0, // Remove borders
   },
   menuItemText: {
     fontFamily: "Outfit-Regular",
@@ -187,22 +223,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 15,
     paddingHorizontal: 10,
-    backgroundColor: "#ffffff",
     borderRadius: 12,
-    elevation: 2,
+    elevation: 3,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.25,
     shadowRadius: 4,
     marginTop: 20,
-    width:'50%' // Adds space between menu items and Sign Out
+    width: "50%",
   },
   menuProfile: {
     alignItems: "center",
     marginBottom: 30,
     paddingBottom: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: "#333", // Changed from "#eee" for better visibility in dark mode
   },
   menuLogo: {
     width: 80,
@@ -213,7 +248,6 @@ const styles = StyleSheet.create({
   menuAppName: {
     fontFamily: "Tan-Mon",
     fontSize: 24,
-    color: "#1a1a1a",
     textAlign: "center",
   },
   closeButton: {
@@ -221,15 +255,14 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   menuBox: {
-    backgroundColor: "#ffffff",
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 5,
-    elevation: 0,
+    elevation: 3,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.25,
     shadowRadius: 4,
-    alignSelf: "stretch", // Ensures it stretches within the parent
+    alignSelf: "stretch",
   },
 });

@@ -9,12 +9,14 @@ import {
 } from "react-native";
 import React, { useState } from "react";
 import { useRouter } from "expo-router";
+import { useTheme } from "../providers/ThemeProvider";
 
 const { width } = Dimensions.get("window");
 const cardWidth = (width - 30) / 2;
 
 const ImageCard = ({ imageUrl, wallpaperName, style }) => {
   const router = useRouter();
+  const { currentTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
@@ -40,12 +42,16 @@ const ImageCard = ({ imageUrl, wallpaperName, style }) => {
 
   return (
     <TouchableOpacity
-      style={[styles.container, style]}
+      style={[
+        styles.container,
+        { backgroundColor: currentTheme.cardBackground },
+        style,
+      ]}
       onPress={handleNavigate}
     >
       {isLoading && (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color="#3498db" />
+          <ActivityIndicator size="small" color={currentTheme.primary} />
         </View>
       )}
       <Image
@@ -60,7 +66,11 @@ const ImageCard = ({ imageUrl, wallpaperName, style }) => {
           setIsLoading(false);
         }}
       />
-      {wallpaperName && <Text style={styles.name}>{wallpaperName}</Text>}
+      {wallpaperName && (
+        <Text style={[styles.name, { backgroundColor: "rgba(0,0,0,0.7)" }]}>
+          {wallpaperName}
+        </Text>
+      )}
     </TouchableOpacity>
   );
 };
@@ -105,7 +115,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: 8,
-    backgroundColor: "rgba(0,0,0,0.5)",
     color: "white",
     fontSize: 12,
     textAlign: "center",

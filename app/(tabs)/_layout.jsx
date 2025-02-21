@@ -2,9 +2,12 @@ import React, { useEffect } from "react";
 import { Tabs, useRouter } from "expo-router";
 import Feather from "@expo/vector-icons/Feather";
 import Octicons from "@expo/vector-icons/Octicons";
+import { useTheme } from "../../providers/ThemeProvider";
+import { View, StyleSheet } from "react-native";
 
 export default function _layout() {
   const router = useRouter();
+  const { isDarkTheme, currentTheme } = useTheme();
 
   useEffect(() => {
     getUserDetails();
@@ -22,7 +25,11 @@ export default function _layout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: "tomato", // Active tab color
-        tabBarInactiveTintColor: "gray", // Inactive tab color
+        tabBarInactiveTintColor: isDarkTheme ? "#888" : "gray", // Inactive tab color
+        tabBarStyle: {
+          backgroundColor: currentTheme.background,
+          borderTopColor: currentTheme.borderColor,
+        },
       }}
     >
       <Tabs.Screen
@@ -30,12 +37,13 @@ export default function _layout() {
         options={{
           tabBarShowLabel: false,
           tabBarIcon: ({ color, focused }) => (
-            <Feather
-              name="home"
-              size={24}
-              color={focused ? "tomato" : "black"}
-              style={{ alignContent: "center" }}
-            />
+            <View style={styles.iconContainer}>
+              <Feather
+                name="home"
+                size={24}
+                color={focused ? "tomato" : color}
+              />
+            </View>
           ),
         }}
       />
@@ -45,11 +53,13 @@ export default function _layout() {
         options={{
           tabBarShowLabel: false,
           tabBarIcon: ({ color, focused }) => (
-            <Feather
-              name="grid"
-              size={25}
-              color={focused ? "tomato" : "black"}
-            />
+            <View style={styles.iconContainer}>
+              <Feather
+                name="grid"
+                size={25}
+                color={focused ? "tomato" : color}
+              />
+            </View>
           ),
         }}
       />
@@ -59,14 +69,24 @@ export default function _layout() {
         options={{
           tabBarShowLabel: false,
           tabBarIcon: ({ color, focused }) => (
-            <Octicons
-              name="heart"
-              size={24}
-              color={focused ? "tomato" : "black"}
-            />
+            <View style={styles.iconContainer}>
+              <Octicons
+                name="heart"
+                size={24}
+                color={focused ? "tomato" : color}
+              />
+            </View>
           ),
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  iconContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});

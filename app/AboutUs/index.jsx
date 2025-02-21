@@ -11,9 +11,11 @@ import {
 import React from "react";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../../providers/ThemeProvider";
 
 const AboutUs = () => {
   const router = useRouter();
+  const { isDarkTheme, currentTheme } = useTheme();
 
   const handleEmailPress = async () => {
     const email = "wallshorizon@gmail.com";
@@ -34,15 +36,25 @@ const AboutUs = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View
+      style={[styles.container, { backgroundColor: currentTheme.background }]}
+    >
+      <View
+        style={[styles.header, { borderBottomColor: currentTheme.borderColor }]}
+      >
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="chevron-back-outline" size={24} color="#1a1a1a" />
+          <Ionicons
+            name="chevron-back-outline"
+            size={24}
+            color={currentTheme.text}
+          />
         </TouchableOpacity>
-        <Text style={styles.title}>About Us</Text>
+        <Text style={[styles.title, { color: currentTheme.text }]}>
+          About Us
+        </Text>
       </View>
 
       <ScrollView style={styles.content}>
@@ -50,19 +62,27 @@ const AboutUs = () => {
           source={require("../../assets/images/4.png")}
           style={styles.logo}
         />
-        <Text style={styles.appName}>Horizon Walls</Text>
-        <Text style={styles.version}>Version 1.0.1</Text>
+        <Text style={[styles.appName, { color: currentTheme.text }]}>
+          Horizon Walls
+        </Text>
+        <Text style={[styles.version, { color: currentTheme.secondary }]}>
+          Version 1.0.2
+        </Text>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About the Developer</Text>
+          <Text style={[styles.sectionTitle, { color: currentTheme.text }]}>
+            About the Developer
+          </Text>
           <Image
             source={{
               uri: "https://res.cloudinary.com/defe2sw6l/image/upload/v1739628732/DSC04886_3_v3u9jg.jpg",
             }}
             style={styles.developerImage}
           />
-          <Text style={styles.devTitle}>Sahil Kumar</Text>
-          <Text style={styles.sectionText}>
+          <Text style={[styles.devTitle, { color: currentTheme.text }]}>
+            Sahil Kumar
+          </Text>
+          <Text style={[styles.sectionText, { color: currentTheme.text }]}>
             Hi! I’m Sahil Kumar, a developer passionate about creating beautiful
             and functional apps. This wallpaper app brings you high-quality
             wallpapers to personalize your device. Enjoy and keep your screen
@@ -71,8 +91,10 @@ const AboutUs = () => {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About the App</Text>
-          <Text style={styles.sectionText}>
+          <Text style={[styles.sectionTitle, { color: currentTheme.text }]}>
+            About the App
+          </Text>
+          <Text style={[styles.sectionText, { color: currentTheme.text }]}>
             Horizon Walls is your premium destination for high-quality
             wallpapers. Our curated collection features stunning images across
             various categories, perfect for personalizing your device.
@@ -80,17 +102,31 @@ const AboutUs = () => {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Features</Text>
-          <Text style={styles.bulletPoint}>• High-quality wallpapers</Text>
-          <Text style={styles.bulletPoint}>• Easy download and set</Text>
-          <Text style={styles.bulletPoint}>• Category-based browsing</Text>
-          <Text style={styles.bulletPoint}>• Favorites collection</Text>
-          <Text style={styles.bulletPoint}>• Search functionality</Text>
+          <Text style={[styles.sectionTitle, { color: currentTheme.text }]}>
+            Features
+          </Text>
+          <Text style={[styles.bulletPoint, { color: currentTheme.text }]}>
+            • High-quality wallpapers
+          </Text>
+          <Text style={[styles.bulletPoint, { color: currentTheme.text }]}>
+            • Easy download and set
+          </Text>
+          <Text style={[styles.bulletPoint, { color: currentTheme.text }]}>
+            • Category-based browsing
+          </Text>
+          <Text style={[styles.bulletPoint, { color: currentTheme.text }]}>
+            • Favorites collection
+          </Text>
+          <Text style={[styles.bulletPoint, { color: currentTheme.text }]}>
+            • Search functionality
+          </Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Contact</Text>
-          <Text style={styles.sectionText}>
+          <Text style={[styles.sectionTitle, { color: currentTheme.text }]}>
+            Contact
+          </Text>
+          <Text style={[styles.sectionText, { color: currentTheme.text }]}>
             For support or inquiries, reach out to us at:{" "}
             <Text style={styles.emailLink} onPress={handleEmailPress}>
               wallshorizon@gmail.com
@@ -105,7 +141,6 @@ const AboutUs = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "white",
   },
   header: {
     flexDirection: "row",
@@ -114,7 +149,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
   },
   backButton: {
     padding: 8,
@@ -123,7 +157,6 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: "Outfit-Bold",
     fontSize: 25,
-    color: "#1a1a1a",
   },
   content: {
     flex: 1,
@@ -140,13 +173,11 @@ const styles = StyleSheet.create({
     fontFamily: "Tan-Mon",
     fontSize: 24,
     textAlign: "center",
-    color: "#1a1a1a",
   },
   version: {
     fontFamily: "Outfit-Regular",
     fontSize: 16,
     textAlign: "center",
-    color: "#666",
     marginTop: 5,
     marginBottom: 30,
   },
@@ -156,26 +187,22 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontFamily: "Outfit-Bold",
     fontSize: 20,
-    color: "#1a1a1a",
     marginBottom: 10,
   },
   devTitle: {
     fontFamily: "Outfit-Bold",
     fontSize: 20,
-    color: "#1a1a1a",
     marginBottom: 5,
     textAlign: "center",
   },
   sectionText: {
     fontFamily: "Outfit-Regular",
     fontSize: 16,
-    color: "#444",
     lineHeight: 24,
   },
   bulletPoint: {
     fontFamily: "Outfit-Regular",
     fontSize: 16,
-    color: "#444",
     lineHeight: 24,
     marginLeft: 10,
     marginBottom: 5,

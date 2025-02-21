@@ -10,60 +10,75 @@ import React from "react";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useTheme } from "../../providers/ThemeProvider";
 
 const ContactUs = () => {
   const router = useRouter();
+  const { isDarkTheme, currentTheme } = useTheme();
 
   const handleEmailPress = async () => {
-    const email = 'wallshorizon@gmail.com';
-    const subject = 'Horizon Walls Support';
+    const email = "wallshorizon@gmail.com";
+    const subject = "Horizon Walls Support";
     const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}`;
-    
+
     try {
       const canOpen = await Linking.canOpenURL(mailtoUrl);
       if (canOpen) {
         await Linking.openURL(mailtoUrl);
       } else {
-        Alert.alert('Error', 'Could not open email client');
+        Alert.alert("Error", "Could not open email client");
       }
     } catch (error) {
-      console.error('Error opening email:', error);
-      Alert.alert('Error', 'Failed to open email client');
+      console.error("Error opening email:", error);
+      Alert.alert("Error", "Failed to open email client");
     }
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View
+      style={[styles.container, { backgroundColor: currentTheme.background }]}
+    >
+      <View
+        style={[styles.header, { borderBottomColor: currentTheme.borderColor }]}
+      >
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="chevron-back-outline" size={24} color="#1a1a1a" />
+          <Ionicons
+            name="chevron-back-outline"
+            size={24}
+            color={currentTheme.text}
+          />
         </TouchableOpacity>
-        <Text style={styles.title}>Contact Us</Text>
+        <Text style={[styles.title, { color: currentTheme.text }]}>
+          Contact Us
+        </Text>
       </View>
 
       <View style={styles.content}>
-        <MaterialCommunityIcons 
-          name="email-outline" 
-          size={80} 
-          color="#4285F4" 
+        <MaterialCommunityIcons
+          name="email-outline"
+          size={80}
+          color={currentTheme.primary}
         />
-        
-        <Text style={styles.description}>
-          Have questions or suggestions? We'd love to hear from you.
-          Send us a message and we'll respond as soon as possible.
+
+        <Text style={[styles.description, { color: currentTheme.secondary }]}>
+          Have questions or suggestions? We'd love to hear from you. Send us a
+          message and we'll respond as soon as possible.
         </Text>
 
-        <TouchableOpacity 
-          style={styles.emailButton}
+        <TouchableOpacity
+          style={[
+            styles.emailButton,
+            { backgroundColor: currentTheme.primary },
+          ]}
           onPress={handleEmailPress}
         >
-          <MaterialCommunityIcons 
-            name="email-send-outline" 
-            size={24} 
-            color="white" 
+          <MaterialCommunityIcons
+            name="email-send-outline"
+            size={24}
+            color="white"
           />
           <Text style={styles.emailButtonText}>wallshorizon@gmail.com</Text>
         </TouchableOpacity>
@@ -75,7 +90,6 @@ const ContactUs = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "white",
   },
   header: {
     flexDirection: "row",
@@ -84,7 +98,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
   },
   backButton: {
     padding: 8,
@@ -93,7 +106,6 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: "Outfit-Bold",
     fontSize: 28,
-    color: "#1a1a1a",
   },
   content: {
     flex: 1,
@@ -105,14 +117,12 @@ const styles = StyleSheet.create({
     fontFamily: "Outfit-Regular",
     fontSize: 16,
     textAlign: "center",
-    color: "#666",
     marginVertical: 30,
     lineHeight: 24,
   },
   emailButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#4285F4",
     paddingHorizontal: 20,
     paddingVertical: 15,
     borderRadius: 25,

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Horizon Walls",
     "slug": "horizonwalls",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/4.png",
     "scheme": "horizonwalls",
