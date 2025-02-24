@@ -125,22 +125,14 @@ const useRewardedAd = () => {
         setDownloadPending(false);
         setLoaded(false);
 
-        // Show user-friendly error message
-        // Alert.alert(
-        //   "Advertisement Error",
-        //   "There was an error loading the advertisement. Please check your internet connection and try again.",
-        //   [
-        //     {
-        //       text: "Try Again",
-        //       onPress: () => {
-        //         if (shouldLoadNewAd) {
-        //           console.log("Retrying ad load...");
-        //           setTimeout(createAndLoadAd, 1000);
-        //         }
-        //       },
-        //     },
-        //   ]
-        // );
+        // Proceed with download when there's an ad error
+        setIsRewarded(true);
+        setDownloadPending(true);
+
+        ToastAndroid.show(
+          "Ad failed to load, proceeding with download",
+          ToastAndroid.SHORT
+        );
       }
     );
 
@@ -180,65 +172,65 @@ const useRewardedAd = () => {
     setIsAdLoading(true);
     setDownloadPending(true);
 
-    // Create a timeout promise
-    const timeoutPromise = new Promise((resolve, reject) => {
-      setTimeout(() => {
-        reject(new Error("Ad loading timed out"));
-      }, 8000); // 15 seconds timeout
-    });
-
-    // Create the ad loading promise
-    const adLoadingPromise = new Promise((resolve, reject) => {
+    try {
       const newAd = RewardedAd.createForAdRequest(adUnitId, {
         requestNonPersonalizedAdsOnly: true,
         keywords: ["wallpaper", "art", "design"],
       });
 
-      const unsubscribeLoaded = newAd.addAdEventListener(
-        RewardedAdEventType.LOADED,
-        () => {
-          console.log("Ad loaded successfully");
-          setLoaded(true);
-          setCurrentAd(newAd);
-          setIsAdLoading(false);
-          setAdError(null);
-          resolve();
-        }
-      );
+      // Create a timeout promise
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error("Ad loading timed out"));
+        }, 8000);
+      });
 
-      const unsubscribeError = newAd.addAdEventListener(
-        AdEventType.ERROR,
-        (error) => {
-          console.error("Ad failed to load:", error);
-          setAdError(error.message);
-          setIsAdLoading(false);
-          setDownloadPending(false);
-          setLoaded(false);
-          reject(new Error("Failed to load ad"));
-        }
-      );
+      // Create the ad loading promise
+      const adLoadingPromise = new Promise((resolve, reject) => {
+        const unsubscribeLoaded = newAd.addAdEventListener(
+          RewardedAdEventType.LOADED,
+          () => {
+            console.log("Ad loaded successfully");
+            setLoaded(true);
+            setCurrentAd(newAd);
+            setIsAdLoading(false);
+            setAdError(null);
+            resolve(newAd); // Resolve with the ad instance
+          }
+        );
 
-      newAd.load();
+        const unsubscribeError = newAd.addAdEventListener(
+          AdEventType.ERROR,
+          (error) => {
+            console.error("Ad failed to load:", error);
+            unsubscribeError();
+            unsubscribeLoaded();
+            reject(error);
+          }
+        );
 
-      return () => {
-        unsubscribeLoaded();
-        unsubscribeError();
-      };
-    });
+        newAd.load();
+      });
 
-    try {
-      // Use Promise.race to handle the timeout
-      await Promise.race([adLoadingPromise, timeoutPromise]);
-      await currentAd.show();
+      // Wait for either the ad to load or timeout
+      const loadedAd = await Promise.race([adLoadingPromise, timeoutPromise]);
+
+      // Show the ad only if we have a valid instance
+      if (loadedAd) {
+        await loadedAd.show();
+      }
     } catch (error) {
       console.log("Error in ad flow:", error);
-      //Alert.alert("Error", "Failed to load or show ad. Proceeding with download.");
-      ToastAndroid.show("Wallpaper saved successfully!", ToastAndroid.SHORT);
+      // Proceed with download if ad fails
       setIsRewarded(true);
       setDownloadPending(true);
       setIsAdLoading(false);
+      ToastAndroid.show(
+        "Ad failed to load, downloading wallpaper...",
+        ToastAndroid.SHORT
+      );
     }
-  }, [loaded, currentAd, createAndLoadAd, resetAdState]);
+  }, [loaded, currentAd, adUnitId, createAndLoadAd, resetAdState]);
 
   useEffect(() => {
     const cleanup = createAndLoadAd();
