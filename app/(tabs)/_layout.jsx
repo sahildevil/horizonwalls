@@ -28,7 +28,7 @@ export default function _layout() {
         tabBarInactiveTintColor: isDarkTheme ? "#888" : "gray", // Inactive tab color
         tabBarStyle: {
           backgroundColor: currentTheme.background,
-          borderTopColor: currentTheme.borderColor,
+          borderTopWidth: 0,
         },
       }}
     >

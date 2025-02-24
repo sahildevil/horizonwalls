@@ -126,21 +126,21 @@ const useRewardedAd = () => {
         setLoaded(false);
 
         // Show user-friendly error message
-        // Alert.alert(
-        //   "Advertisement Error",
-        //   "There was an error loading the advertisement. Please check your internet connection and try again.",
-        //   [
-        //     {
-        //       text: "Try Again",
-        //       onPress: () => {
-        //         if (shouldLoadNewAd) {
-        //           console.log("Retrying ad load...");
-        //           setTimeout(createAndLoadAd, 1000);
-        //         }
-        //       },
-        //     },
-        //   ]
-        // );
+        Alert.alert(
+          "Advertisement Error",
+          "There was an error loading the advertisement. Please check your internet connection and try again.",
+          [
+            {
+              text: "Try Again",
+              onPress: () => {
+                if (shouldLoadNewAd) {
+                  console.log("Retrying ad load...");
+                  setTimeout(createAndLoadAd, 1000);
+                }
+              },
+            },
+          ]
+        );
       }
     );
 
@@ -184,7 +184,7 @@ const useRewardedAd = () => {
     const timeoutPromise = new Promise((resolve, reject) => {
       setTimeout(() => {
         reject(new Error("Ad loading timed out"));
-      }, 8000); // 15 seconds timeout
+      }, 6000); // 15 seconds timeout
     });
 
     // Create the ad loading promise
@@ -233,7 +233,6 @@ const useRewardedAd = () => {
     } catch (error) {
       console.log("Error in ad flow:", error);
       //Alert.alert("Error", "Failed to load or show ad. Proceeding with download.");
-      ToastAndroid.show("Wallpaper saved successfully!", ToastAndroid.SHORT);
       setIsRewarded(true);
       setDownloadPending(true);
       setIsAdLoading(false);

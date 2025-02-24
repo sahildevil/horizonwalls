@@ -30,10 +30,10 @@ import {
 } from "react-native-google-mobile-ads";
 import DownloadButton from "../../components/DownloadButton";
 
-const adUnitId = __DEV__
+const adUnitIdd = __DEV__
   ? TestIds.REWARDED
   : "ca-app-pub-4677981033286236/7236677981";
-
+const adUnitId = TestIds.REWARDED;
 const Screens = () => {
   const params = useLocalSearchParams();
   const [isFavorite, setIsFavorite] = useState(false);
