@@ -7,6 +7,7 @@ import {
   Platform,
   ToastAndroid,
 } from "react-native";
+import CameraRoll from "@react-native-camera-roll/camera-roll";
 import {
   RewardedAd,
   TestIds,
@@ -41,12 +42,10 @@ const useRewardedAd = () => {
   const [shouldLoadNewAd, setShouldLoadNewAd] = useState(true);
   const [adError, setAdError] = useState(null);
 
-  // Use test ID for both dev and production temporarily to debug
-  const adUnitIdd = __DEV__
+  const adUnitId = __DEV__
     ? TestIds.REWARDED
     : "ca-app-pub-4677981033286236/7236677981";
-  const adUnitId = TestIds.REWARDED;
-  // Log current environment
+
   useEffect(() => {
     console.log("Current environment:", __DEV__ ? "Development" : "Production");
     console.log("Platform:", Platform.OS);
@@ -120,27 +119,18 @@ const useRewardedAd = () => {
           domain: error.domain,
         });
 
+        // Reset ad states
         setAdError(error.message);
         setIsAdLoading(false);
-        setDownloadPending(false);
         setLoaded(false);
 
-        // Show user-friendly error message
-        Alert.alert(
-          "Advertisement Error",
-          "There was an error loading the advertisement. Please check your internet connection and try again.",
-          [
-            {
-              text: "Try Again",
-              onPress: () => {
-                if (shouldLoadNewAd) {
-                  console.log("Retrying ad load...");
-                  setTimeout(createAndLoadAd, 1000);
-                }
-              },
-            },
-          ]
-        );
+        // Proceed with download
+        setIsRewarded(true);
+        setDownloadPending(true);
+        setShouldLoadNewAd(false);
+
+        // Show toast instead of alert
+        ToastAndroid.show("Processing download...", ToastAndroid.SHORT);
       }
     );
 
@@ -166,13 +156,19 @@ const useRewardedAd = () => {
   }, []);
 
   const showAd = useCallback(async () => {
+    // First, reset ad state if user is clicking download again
+    resetAdState();
+
     if (loaded && currentAd) {
       try {
         await currentAd.show();
       } catch (error) {
         console.error("Error showing ad:", error);
         resetAdState();
-        createAndLoadAd();
+        // Proceed with download without waiting for new ad
+        setIsRewarded(true);
+        setDownloadPending(true);
+        setShouldLoadNewAd(false);
       }
       return;
     }
@@ -180,62 +176,38 @@ const useRewardedAd = () => {
     setIsAdLoading(true);
     setDownloadPending(true);
 
-    // Create a timeout promise
-    const timeoutPromise = new Promise((resolve, reject) => {
+    // Create timeout promise with 5 seconds (not 6)
+    const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => {
         reject(new Error("Ad loading timed out"));
-      }, 6000); // 15 seconds timeout
-    });
-
-    // Create the ad loading promise
-    const adLoadingPromise = new Promise((resolve, reject) => {
-      const newAd = RewardedAd.createForAdRequest(adUnitId, {
-        requestNonPersonalizedAdsOnly: true,
-        keywords: ["wallpaper", "art", "design"],
-      });
-
-      const unsubscribeLoaded = newAd.addAdEventListener(
-        RewardedAdEventType.LOADED,
-        () => {
-          console.log("Ad loaded successfully");
-          setLoaded(true);
-          setCurrentAd(newAd);
-          setIsAdLoading(false);
-          setAdError(null);
-          resolve();
-        }
-      );
-
-      const unsubscribeError = newAd.addAdEventListener(
-        AdEventType.ERROR,
-        (error) => {
-          console.error("Ad failed to load:", error);
-          setAdError(error.message);
-          setIsAdLoading(false);
-          setDownloadPending(false);
-          setLoaded(false);
-          reject(new Error("Failed to load ad"));
-        }
-      );
-
-      newAd.load();
-
-      return () => {
-        unsubscribeLoaded();
-        unsubscribeError();
-      };
+      }, 5000); // Changed to 5 second timeout
     });
 
     try {
-      // Use Promise.race to handle the timeout
-      await Promise.race([adLoadingPromise, timeoutPromise]);
-      await currentAd.show();
+      // Race between ad loading and timeout
+      await Promise.race([
+        new Promise((resolve) => {
+          createAndLoadAd();
+          resolve();
+        }),
+        timeoutPromise,
+      ]);
     } catch (error) {
-      console.log("Error in ad flow:", error);
-      //Alert.alert("Error", "Failed to load or show ad. Proceeding with download.");
+      console.log("Ad loading timed out, proceeding with download");
+      // Reset ad states
+      setAdError("Ad loading timed out");
+      setIsAdLoading(false);
+      setLoaded(false);
+
+      // Proceed with download
       setIsRewarded(true);
       setDownloadPending(true);
-      setIsAdLoading(false);
+      setShouldLoadNewAd(false);
+
+      ToastAndroid.show(
+        "Ad taking too long, processing download...",
+        ToastAndroid.SHORT
+      );
     }
   }, [loaded, currentAd, createAndLoadAd, resetAdState]);
 
@@ -293,18 +265,31 @@ const DownloadButton = ({ imageUrl, wallpaperName }) => {
       if (Platform.OS === "android") {
         if (Platform.Version >= 31) {
           // ✅ Android 12+ (API 31+) - Save directly without permission
-          await MediaLibrary.saveToLibraryAsync(downloadResult.uri);
+          const asset = await MediaLibrary.createAssetAsync(downloadResult.uri);
+          //let album = await MediaLibrary.getAlbumAsync("HorizonWalls");
+          await MediaLibrary.createAlbumAsync("HorizonWalls", asset, false);
+
           ToastAndroid.show(
-            "Wallpaper saved successfully!",
+            "Wallpaper saved in HorizonWalls folder!",
             ToastAndroid.SHORT
           );
         } else {
           // 🔹 Android 11 and below - Request permission first
           const { status } = await MediaLibrary.requestPermissionsAsync();
           if (status === "granted") {
-            await MediaLibrary.saveToLibraryAsync(downloadResult.uri);
+            const asset = await MediaLibrary.createAssetAsync(
+              downloadResult.uri
+            );
+            let album = await MediaLibrary.getAlbumAsync("HorizonWalls");
+
+            if (album === null) {
+              await MediaLibrary.createAlbumAsync("HorizonWalls", asset, false);
+            } else {
+              await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
+            }
+
             ToastAndroid.show(
-              "Wallpaper saved successfully!",
+              "Wallpaper saved in HorizonWalls folder!",
               ToastAndroid.SHORT
             );
           } else {
@@ -315,8 +300,15 @@ const DownloadButton = ({ imageUrl, wallpaperName }) => {
           }
         }
       } else {
-        // iOS - Just save without asking (since permission is handled automatically)
-        await MediaLibrary.saveToLibraryAsync(downloadResult.uri);
+        // iOS - Save to HorizonWalls album
+        const asset = await MediaLibrary.createAssetAsync(downloadResult.uri);
+        let album = await MediaLibrary.getAlbumAsync("HorizonWalls");
+
+        if (album === null) {
+          await MediaLibrary.createAlbumAsync("HorizonWalls", asset, false);
+        } else {
+          await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
+        }
       }
 
       // Clean up the cached file
@@ -336,6 +328,7 @@ const DownloadButton = ({ imageUrl, wallpaperName }) => {
     }
   };
 
+  
   useEffect(() => {
     if (isRewarded && downloadPending && !downloadStarted) {
       console.log("Starting download after reward...");
