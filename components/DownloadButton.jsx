@@ -7,16 +7,16 @@ import {
   Platform,
   ToastAndroid,
 } from "react-native";
-import CameraRoll from "@react-native-camera-roll/camera-roll";
+import * as FileSystem from "expo-file-system";
+import * as MediaLibrary from "expo-media-library";
+import { Feather } from "@expo/vector-icons";
 import {
   RewardedAd,
   TestIds,
   AdEventType,
   RewardedAdEventType,
 } from "react-native-google-mobile-ads";
-import * as FileSystem from "expo-file-system";
-import * as MediaLibrary from "expo-media-library";
-import { Feather } from "@expo/vector-icons";
+import CustomAlert from "./CustomAlert";
 
 // Utility functions remain the same
 const sanitizeFileName = (name) => {
@@ -57,21 +57,22 @@ const useRewardedAd = () => {
 
     console.log("Creating new ad request...");
 
-    // const newAd = RewardedAd.createForAdRequest(adUnitId, {
-    //   requestNonPersonalizedAdsOnly: true,
-    //   keywords: ["wallpaper", "art", "design"],
-    // });
     const newAd = RewardedAd.createForAdRequest(adUnitId, {
       requestNonPersonalizedAdsOnly: true,
       keywords: [
-        "wallpaper", "art", "design", "photography", "illustration",
-        "backgrounds", "aesthetic", "nature", "abstract", "patterns",
-        "3D art", "digital art", "textures", "creative", "graphics",
-        "mobile themes", "colorful", "HD wallpapers", "anime", "minimalist",
-        "modern design", "trending", "abstract wallpapers", "architecture",
-        "gaming", "tech", "music", "space", "dark mode"
+        "wallpaper",
+        "art",
+        "design",
+        "photography",
+        "illustration",
+        "backgrounds",
+        "aesthetic",
+        "nature",
+        "abstract",
+        "patterns",
       ],
     });
+
     const unsubscribeLoaded = newAd.addAdEventListener(
       RewardedAdEventType.LOADED,
       () => {
@@ -80,27 +81,13 @@ const useRewardedAd = () => {
         setCurrentAd(newAd);
         setIsAdLoading(false);
         setAdError(null);
-
-        if (downloadPending) {
-          console.log("Attempting to show ad due to pending download...");
-          newAd.show().catch((error) => {
-            console.error("Error showing ad:", error);
-            setIsAdLoading(false);
-            setDownloadPending(false);
-            setAdError(error.message);
-            Alert.alert(
-              "Ad Error",
-              "Failed to show advertisement. Please try again."
-            );
-          });
-        }
       }
     );
 
     const unsubscribeEarned = newAd.addAdEventListener(
       RewardedAdEventType.EARNED_REWARD,
-      (reward) => {
-        console.log("Reward earned:", reward);
+      () => {
+        console.log("User earned reward");
         setIsRewarded(true);
         setDownloadPending(true);
         setShouldLoadNewAd(false);
@@ -113,33 +100,20 @@ const useRewardedAd = () => {
         console.log("Ad closed");
         setLoaded(false);
         setCurrentAd(null);
-        if (shouldLoadNewAd) {
-          console.log("Creating new ad after close...");
-          createAndLoadAd();
-        }
+        // Don't create new ad here
       }
     );
 
     const unsubscribeError = newAd.addAdEventListener(
       AdEventType.ERROR,
       (error) => {
-        console.error("Detailed ad error:", {
-          message: error.message,
-          code: error.code,
-          domain: error.domain,
-        });
-
-        // Reset ad states
+        console.log("Ad error:", error);
         setAdError(error.message);
         setIsAdLoading(false);
         setLoaded(false);
-
-        // Proceed with download
         setIsRewarded(true);
         setDownloadPending(true);
         setShouldLoadNewAd(false);
-
-        // Show toast instead of alert
         ToastAndroid.show("Processing download...", ToastAndroid.SHORT);
       }
     );
@@ -148,13 +122,12 @@ const useRewardedAd = () => {
     newAd.load();
 
     return () => {
-      console.log("Cleaning up ad listeners...");
       unsubscribeLoaded();
       unsubscribeEarned();
       unsubscribeClosed();
       unsubscribeError();
     };
-  }, [adUnitId, downloadPending, shouldLoadNewAd]);
+  }, [adUnitId, shouldLoadNewAd]);
 
   const resetAdState = useCallback(() => {
     setLoaded(false);
@@ -165,102 +138,54 @@ const useRewardedAd = () => {
     setShouldLoadNewAd(true);
   }, []);
 
-  // const showAd = useCallback(async () => {
-  //   // First, reset ad state if user is clicking download again
-  //   resetAdState();
-
-  //   if (loaded && currentAd) {
-  //     try {
-  //       await currentAd.show();
-  //     } catch (error) {
-  //       console.error("Error showing ad:", error);
-  //       resetAdState();
-  //       // Proceed with download without waiting for new ad
-  //       setIsRewarded(true);
-  //       setDownloadPending(true);
-  //       setShouldLoadNewAd(false);
-  //     }
-  //     return;
-  //   }
-
-  //   setIsAdLoading(true);
-  //   setDownloadPending(true);
-
-  //   // Create timeout promise with 5 seconds (not 6)
-  //   const timeoutPromise = new Promise((_, reject) => {
-  //     setTimeout(() => {
-  //       reject(new Error("Ad loading timed out"));
-  //     }, 5000); // Changed to 5 second timeout
-  //   });
-
-  //   try {
-  //     // Race between ad loading and timeout
-  //     await Promise.race([
-  //       new Promise((resolve) => {
-  //         createAndLoadAd();
-  //         resolve();
-  //       }),
-  //       timeoutPromise,
-  //     ]);
-  //   } catch (error) {
-  //     console.log("Ad loading timed out, proceeding with download");
-  //     // Reset ad states
-  //     setAdError("Ad loading timed out");
-  //     setIsAdLoading(false);
-  //     setLoaded(false);
-
-  //     // Proceed with download
-  //     setIsRewarded(true);
-  //     setDownloadPending(true);
-  //     setShouldLoadNewAd(false);
-
-  //     ToastAndroid.show(
-  //       "Ad taking too long, processing download...",
-  //       ToastAndroid.SHORT
-  //     );
-  //   }
-  // }, [loaded, currentAd, createAndLoadAd, resetAdState]);
-
   const showAd = useCallback(async () => {
-    resetAdState();
-    setIsAdLoading(true);
-    setDownloadPending(true);
-
-    // Set a timeout of 5 seconds
-    const adTimeout = setTimeout(() => {
-      console.log("Ad didn't load in time, starting download...");
-      setIsRewarded(true);
-      setDownloadPending(true);
-      setShouldLoadNewAd(false);
-    }, 9000);
-
-    if (loaded && currentAd) {
-      try {
-        await currentAd.show();
-        clearTimeout(adTimeout); // Clear timeout if ad loads
-      } catch (error) {
-        console.error("Error showing ad:", error);
-        clearTimeout(adTimeout);
-        setIsRewarded(true);
-        setDownloadPending(true);
-        setShouldLoadNewAd(false);
-      }
+    if (isAdLoading) {
+      console.log("Ad is already loading");
       return;
     }
 
+    setIsAdLoading(true);
+    setDownloadPending(true);
+
+    const timeoutId = setTimeout(() => {
+      if (!loaded) {
+        console.log("Ad load timeout");
+        setIsRewarded(true);
+        setDownloadPending(true);
+        setIsAdLoading(false);
+        setShouldLoadNewAd(false);
+        ToastAndroid.show(
+          "Ad taking too long, processing download...",
+          ToastAndroid.SHORT
+        );
+      }
+    }, 7000);
+
     try {
-      createAndLoadAd();
+      if (loaded && currentAd) {
+        clearTimeout(timeoutId);
+        await currentAd.show();
+      } else {
+        createAndLoadAd();
+      }
     } catch (error) {
-      console.error("Error loading ad:", error);
-      clearTimeout(adTimeout);
+      console.error("Error showing ad:", error);
+      clearTimeout(timeoutId);
       setIsRewarded(true);
       setDownloadPending(true);
+      setIsAdLoading(false);
       setShouldLoadNewAd(false);
     }
-  }, [loaded, currentAd, createAndLoadAd, resetAdState]);
+  }, [loaded, currentAd, createAndLoadAd, isAdLoading]);
+
+  // Preload ad when component mounts
   useEffect(() => {
     const cleanup = createAndLoadAd();
-    return cleanup;
+    return () => {
+      cleanup();
+      setCurrentAd(null);
+      setLoaded(false);
+    };
   }, [createAndLoadAd]);
 
   return {
@@ -278,6 +203,7 @@ const useRewardedAd = () => {
 
 const DownloadButton = ({ imageUrl, wallpaperName }) => {
   const [downloadStarted, setDownloadStarted] = useState(false);
+  const [showAlert, setShowAlert] = useState(false);
   const {
     isAdLoading,
     showAd,
@@ -310,10 +236,9 @@ const DownloadButton = ({ imageUrl, wallpaperName }) => {
       const downloadResult = await FileSystem.downloadAsync(imageUrl, fileUri);
 
       if (Platform.OS === "android") {
-        if (Platform.Version >= 32) {
-          // ✅ Android 12+ (API 31+) - Save directly without permission
+        if (Platform.Version >= 31) {
           const asset = await MediaLibrary.createAssetAsync(downloadResult.uri);
-          //let album = await MediaLibrary.getAlbumAsync("HorizonWalls");
+          //          let album = await MediaLibrary.getAlbumAsync("HorizonWalls");
           await MediaLibrary.createAlbumAsync("HorizonWalls", asset, false);
 
           ToastAndroid.show(
@@ -382,18 +307,35 @@ const DownloadButton = ({ imageUrl, wallpaperName }) => {
     }
   }, [isRewarded, downloadPending, downloadStarted, imageUrl, wallpaperName]);
 
+  const handlePress = () => {
+    setShowAlert(true);
+  };
+
+  const handleConfirm = () => {
+    setShowAlert(false);
+    showAd();
+  };
+
   return (
-    <TouchableOpacity
-      onPress={showAd}
-      disabled={isAdLoading || downloadStarted}
-      style={styles.downloadButton}
-    >
-      {isAdLoading || downloadStarted ? (
-        <ActivityIndicator size="small" color="white" />
-      ) : (
-        <Feather name="download" size={24} color="white" />
-      )}
-    </TouchableOpacity>
+    <>
+      <TouchableOpacity
+        onPress={handlePress}
+        disabled={isAdLoading || downloadStarted}
+        style={styles.downloadButton}
+      >
+        {isAdLoading || downloadStarted ? (
+          <ActivityIndicator size="small" color="white" />
+        ) : (
+          <Feather name="download" size={24} color="white" />
+        )}
+      </TouchableOpacity>
+
+      <CustomAlert
+        visible={showAlert}
+        onClose={() => setShowAlert(false)}
+        onConfirm={handleConfirm}
+      />
+    </>
   );
 };
 

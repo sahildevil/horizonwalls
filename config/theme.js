@@ -6,6 +6,8 @@ export const theme = {
     secondary: "#666666",
     cardBackground: "#f0f0f0",
     borderColor: "#dddddd",
+    dialogtext: "#000000",
+    closebutton: "#999999",
   },
   dark: {
     background: "#000000",
@@ -14,6 +16,8 @@ export const theme = {
     secondary: "#999999",
     cardBackground: "#1a1a1a",
     borderColor: "#333333",
+    dialogtext: "#ffffff",
+    closebutton: "#cccccc",
   },
   fonts: {
     regular: "Outfit-Regular",
