@@ -114,7 +114,7 @@ const useRewardedAd = () => {
         setIsRewarded(true);
         setDownloadPending(true);
         setShouldLoadNewAd(false);
-        ToastAndroid.show("Processing download...", ToastAndroid.SHORT);
+        //ToastAndroid.show("Processing download...", ToastAndroid.SHORT);
       }
     );
 
@@ -155,7 +155,7 @@ const useRewardedAd = () => {
         setIsAdLoading(false);
         setShouldLoadNewAd(false);
         ToastAndroid.show(
-          "Ad taking too long, processing download...",
+          "Ad taking too long, Starting download...",
           ToastAndroid.SHORT
         );
       }

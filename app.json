@@ -17,6 +17,7 @@
         "backgroundColor": "#ffffff"
       },
       "permissions": [
+        "android.permission.MANAGE_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
         "READ_EXTERNAL_STORAGE",
         "MEDIA_LIBRARY",
