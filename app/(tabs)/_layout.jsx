@@ -38,11 +38,12 @@ export default function _layout() {
           tabBarShowLabel: false,
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.iconContainer}>
-              <Feather
+              <Octicons name="home" size={24} color={focused ? "tomato" : color} />
+              {/* <Feather
                 name="home"
                 size={24}
                 color={focused ? "tomato" : color}
-              />
+              /> */}
             </View>
           ),
         }}

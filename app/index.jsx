@@ -24,7 +24,7 @@ export default function Index() {
 
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color="#4285F4" />
+      <ActivityIndicator size="large" color="tomato" />
       <Text style={styles.loadingText}>
         {!user ? "Redirecting to login..." : "Loading app..."}
       </Text>
@@ -37,11 +37,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: "black",
   },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: "#333",
+    color: "white",
   },
 });

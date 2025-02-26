@@ -46,7 +46,7 @@ const Home = () => {
       }
 
       const data = await response.json();
-      console.log("Fetched Data:", data);
+      //console.log("Fetched Data:", data);
 
       if (!data.success || !Array.isArray(data.wallpapers)) {
         throw new Error("Invalid data structure received from API");
