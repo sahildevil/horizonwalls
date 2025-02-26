@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   View,
   Alert,
+  Linking, // Add this import
 } from "react-native";
 import React, { useState } from "react";
 import Feather from "@expo/vector-icons/Feather";
@@ -12,6 +13,7 @@ import { useRouter } from "expo-router";
 import Modal from "react-native-modal";
 import { useAuth } from "../providers/AuthProvider";
 import { useTheme } from "../providers/ThemeProvider";
+import Entypo from "@expo/vector-icons/Entypo";
 import { StatusBar } from "expo-status-bar";
 
 const Header = () => {
@@ -57,6 +59,21 @@ const Header = () => {
       icon: "share-2",
       label: "Share App",
       onPress: () => console.log("Share App"),
+    },
+    {
+      icon: "book-open",
+      label: "Privacy Policy",
+      onPress: () => {
+        Linking.openURL(
+          "https://www.termsfeed.com/live/2844d51a-9a57-40fe-8138-c6dcb682c7ca"
+        ).catch((err) => {
+          console.error("Failed to open Privacy Policy URL:", err);
+          Alert.alert(
+            "Error",
+            "Could not open privacy policy link. Please try again later."
+          );
+        });
+      },
     },
     {
       icon: "moon",
