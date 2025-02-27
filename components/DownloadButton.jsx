@@ -195,6 +195,7 @@ const DownloadButton = ({ imageUrl, wallpaperName }) => {
     setDownloadPending,
     resetAdState,
   } = useRewardedAd();
+
   const handleDownload = async () => {
     if (!imageUrl) {
       console.log("No URL available for download");
@@ -260,11 +261,20 @@ const DownloadButton = ({ imageUrl, wallpaperName }) => {
     const timeout = setTimeout(() => {
       console.log("Ad took too long to load, starting download...");
       handleDownload();
-    }, 100);
+    }, 8000); // Changed from 100ms to 5000ms (5 seconds)
 
     setAdTimeout(timeout);
     showAd();
   };
+
+  // Clear timeout when component unmounts
+  useEffect(() => {
+    return () => {
+      if (adTimeout) {
+        clearTimeout(adTimeout);
+      }
+    };
+  }, [adTimeout]);
 
   useEffect(() => {
     if (isRewarded && downloadPending && !downloadStarted) {
@@ -272,11 +282,12 @@ const DownloadButton = ({ imageUrl, wallpaperName }) => {
       handleDownload();
     }
 
-    // If ad loads within 5 seconds, clear timeout to prevent auto-download
-    if (isAdLoading) {
+    // If ad loads within timeout, clear timeout to prevent auto-download
+    if (isAdLoading === false && adTimeout) {
       clearTimeout(adTimeout);
+      setAdTimeout(null);
     }
-  }, [isRewarded, downloadPending, downloadStarted, isAdLoading]);
+  }, [isRewarded, downloadPending, downloadStarted, isAdLoading, adTimeout]);
 
   return (
     <TouchableOpacity
