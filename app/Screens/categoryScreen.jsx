@@ -14,8 +14,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useTheme } from "../../providers/ThemeProvider";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL + "/wallpapers";
-
+// const API_URL = process.env.EXPO_PUBLIC_API_URL + "/wallpapers";
+const API_URL = "http://192.168.1.3:8000/api/wallpapers";
 const { width } = Dimensions.get("window");
 const CARD_MARGIN = 8;
 const CONTAINER_PADDING = 16;
@@ -39,31 +39,19 @@ const CategoryDetails = () => {
     const fetchCategoryWallpapers = async () => {
       try {
         console.log("Fetching wallpapers for category:", id);
-        // Use the wallpapers endpoint with category query parameter
-        const response = await fetch(`${API_URL}?category=${id}`, {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        });
+        const response = await fetch(`${API_URL}?category=${id}`);
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => null);
-          console.error("Server Error Details:", errorData);
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
-        console.log("Fetched Wallpapers:", data);
+        console.log("Category wallpapers count:", data.length);
 
-        if (!data.success || !Array.isArray(data.wallpapers)) {
-          throw new Error("Invalid data structure received from API");
-        }
-
-        setWallpapers(data.wallpapers);
+        // Data is now directly an array from Appwrite
+        setWallpapers(data);
       } catch (error) {
-        console.error("Error fetching wallpapers:", error);
+        console.error("Error fetching category wallpapers:", error);
         setError(error.message);
       } finally {
         setLoading(false);
@@ -123,12 +111,12 @@ const CategoryDetails = () => {
 
       <FlatList
         data={wallpapers}
-        keyExtractor={(item) => item._id}
+        keyExtractor={(item) => item.$id} // Changed from _id to $id
         renderItem={({ item }) => (
           <View style={{ margin: CARD_MARGIN }}>
             <ImageCard
-              imageUrl={item.image}
-              wallpaperName={item.name}
+              imageUrl={item.imageUrl} // Changed from image to imageUrl
+              wallpaperName={item.title} // Changed from name to title
               style={[
                 styles.card,
                 { backgroundColor: currentTheme.cardBackground },

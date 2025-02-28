@@ -13,6 +13,7 @@ import { useRouter, useNavigation } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useTheme } from "../../providers/ThemeProvider";
 import { StatusBar } from "expo-status-bar";
+import ImageCard from "../../components/ImageCard";
 
 const { width } = Dimensions.get("window");
 const CARD_MARGIN = 8;
@@ -52,6 +53,19 @@ const Favs = () => {
     }
   };
 
+  const renderEmptyList = () => (
+    <View
+      style={[
+        styles.emptyContainer,
+        { backgroundColor: currentTheme.background },
+      ]}
+    >
+      <Text style={[styles.emptyText, { color: currentTheme.secondary }]}>
+        No favorite wallpapers yet
+      </Text>
+    </View>
+  );
+
   return (
     <View
       style={[styles.container, { backgroundColor: currentTheme.background }]}
@@ -60,52 +74,23 @@ const Favs = () => {
       <Text style={[styles.title, { color: currentTheme.text }]}>
         Favorite Wallpapers
       </Text>
-      {favorites.length === 0 ? (
-        <View
-          style={[
-            styles.emptyContainer,
-            { backgroundColor: currentTheme.background },
-          ]}
-        >
-          <Text style={[styles.emptyText, { color: currentTheme.secondary }]}>
-            No favorite wallpapers yet
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={favorites}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[
-                styles.card,
-                {
-                  margin: CARD_MARGIN,
-                  backgroundColor: currentTheme.cardBackground,
-                },
-              ]}
-              onPress={() => {
-                router.push({
-                  pathname: "/Screens",
-                  params: {
-                    imageUrl: encodeURIComponent(item.imageUrl),
-                    name: encodeURIComponent(item.name),
-                  },
-                });
-              }}
-            >
-              <Image
-                source={{ uri: item.imageUrl }}
-                style={styles.image}
-                resizeMode="cover"
-              />
-            </TouchableOpacity>
-          )}
-          keyExtractor={(item) => item.addedAt}
-          numColumns={2}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+      <FlatList
+        data={favorites}
+        keyExtractor={(item, index) => `favorite-${index}`}
+        renderItem={({ item }) => (
+          <View style={{ margin: CARD_MARGIN }}>
+            <ImageCard
+              imageUrl={item.imageUrl} // Already using imageUrl which is good
+              wallpaperName={item.name} // Using name field which is saved in AsyncStorage
+              style={styles.card}
+            />
+          </View>
+        )}
+        numColumns={2}
+        contentContainerStyle={styles.listContainer}
+        ListEmptyComponent={renderEmptyList}
+        showsVerticalScrollIndicator={false}
+      />
     </View>
   );
 };

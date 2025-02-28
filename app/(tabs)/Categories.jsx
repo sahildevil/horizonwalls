@@ -10,9 +10,8 @@ import Header from "../../components/Header";
 import CategoryCard from "../../components/CategoryCard";
 import { useTheme } from "../../providers/ThemeProvider";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL + "/categories";
-//const API_URL = "http://192.168.1.11:8000/api/categories";
-
+// const API_URL = process.env.EXPO_PUBLIC_API_URL + "/categories";
+const API_URL = "http://192.168.1.3:8000/api/categories";
 const Categories = () => {
   const { isDarkTheme, currentTheme } = useTheme();
   const [categories, setCategories] = useState([]);
@@ -22,7 +21,6 @@ const Categories = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        console.log("Fetching categories...");
         const response = await fetch(API_URL);
 
         if (!response.ok) {
@@ -30,14 +28,10 @@ const Categories = () => {
         }
 
         const data = await response.json();
-        console.log("Fetched Categories:", data);
+        console.log("Categories response:", data);
 
-        if (!data.success || !Array.isArray(data.category)) {
-          throw new Error("Invalid data structure received from API");
-        }
-
-        setCategories(data.category); // Changed from data.categories to data.category
-        console.log("Set categories:", data.category); // Debug log
+        // Data is now directly an array from Appwrite
+        setCategories(data);
       } catch (error) {
         console.error("Error fetching categories:", error);
         setError(error.message);
@@ -74,9 +68,6 @@ const Categories = () => {
     );
   }
 
-  // Debug log to verify data before rendering
-  console.log("Rendering categories:", categories);
-
   return (
     <View
       style={[styles.container, { backgroundColor: currentTheme.background }]}
@@ -86,17 +77,14 @@ const Categories = () => {
       </Text>
       <FlatList
         data={categories}
-        keyExtractor={(item) => item._id}
-        renderItem={({ item }) => {
-          console.log("Rendering category item:", item); // Debug log
-          return (
-            <CategoryCard
-              name={item.name}
-              imageUrl={item.image}
-              id={item._id}
-            />
-          );
-        }}
+        keyExtractor={(item) => item.$id} // Changed from _id to $id
+        renderItem={({ item }) => (
+          <CategoryCard
+            name={item.name}
+            imageUrl={item.imageUrl} // Changed from image to imageUrl
+            id={item.$id} // Changed from _id to $id
+          />
+        )}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
       />
