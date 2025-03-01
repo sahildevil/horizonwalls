@@ -54,12 +54,7 @@ const Favs = () => {
   };
 
   const renderEmptyList = () => (
-    <View
-      style={[
-        styles.emptyContainer,
-        { backgroundColor: currentTheme.background },
-      ]}
-    >
+    <View style={styles.emptyContainer}>
       <Text style={[styles.emptyText, { color: currentTheme.secondary }]}>
         No favorite wallpapers yet
       </Text>
@@ -87,7 +82,11 @@ const Favs = () => {
           </View>
         )}
         numColumns={2}
-        contentContainerStyle={styles.listContainer}
+        contentContainerStyle={[
+          styles.listContainer,
+          // Add this to make the empty state message centered when list is empty
+          favorites.length === 0 && { flex: 1, justifyContent: "center" },
+        ]}
         ListEmptyComponent={renderEmptyList}
         showsVerticalScrollIndicator={false}
       />
@@ -111,7 +110,8 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingHorizontal: CONTAINER_PADDING,
     paddingVertical: CONTAINER_PADDING,
-    alignItems: "center", // Center cards horizontally
+    // Keep alignItems center
+    alignItems: "center",
   },
   card: {
     width: CARD_WIDTH,
@@ -133,14 +133,16 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
+    width: "100%",
     alignItems: "center",
+    justifyContent: "center",
+    paddingBottom: 100, // Add padding at the bottom to adjust vertical position
   },
   emptyText: {
     fontFamily: "Outfit-Regular",
-    fontSize: 16,
+    fontSize: 18,
     color: "#666",
+    textAlign: "center",
   },
 });
 

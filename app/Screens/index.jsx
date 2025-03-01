@@ -415,7 +415,7 @@ const Screens = () => {
         <Ionicons name="chevron-back-outline" size={24} color="white" />
       </TouchableOpacity>
 
-      <BlurView intensity={100} tint="dark" style={styles.toolbar}>
+      <View intensity={100} tint="dark" style={styles.toolbar}>
         <DownloadButton imageUrl={decodedUrl} wallpaperName={wallpaperName} />
         {/* <TouchableOpacity onPress={downloadImage} disabled={isAdLoading}>
           {isAdLoading ? (
@@ -434,7 +434,7 @@ const Screens = () => {
             color={isFavorite ? "#ff4757" : "white"}
           />
         </TouchableOpacity>
-      </BlurView>
+      </View>
     </View>
   );
 };
@@ -477,5 +477,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 20,
     overflow: "hidden",
+    backgroundColor:'black'
   },
 });

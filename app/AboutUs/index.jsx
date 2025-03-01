@@ -59,14 +59,14 @@ const AboutUs = () => {
 
       <ScrollView style={styles.content}>
         <Image
-          source={require("../../assets/images/4.png")}
+          source={require("../../assets/images/6.png")}
           style={styles.logo}
         />
         <Text style={[styles.appName, { color: currentTheme.text }]}>
           Horizon Walls
         </Text>
         <Text style={[styles.version, { color: currentTheme.secondary }]}>
-          Version 1.0.2
+          Version 1.0.3
         </Text>
 
         <View style={styles.section}>
@@ -75,7 +75,7 @@ const AboutUs = () => {
           </Text>
           <Image
             source={{
-              uri: "https://res.cloudinary.com/defe2sw6l/image/upload/v1739628732/DSC04886_3_v3u9jg.jpg",
+              uri: "https://res.cloudinary.com/defe2sw6l/image/upload/v1740822212/DSC04886_3_f5vwt8.jpg",
             }}
             style={styles.developerImage}
           />

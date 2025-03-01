@@ -16,7 +16,7 @@ import { useTheme } from "../../providers/ThemeProvider";
 
 const { width } = Dimensions.get("window");
 const API_URL = process.env.EXPO_PUBLIC_API_URL + "/wallpapers";
-
+//const API_URL = "http://192.168.1.5:8000/api/wallpapers";
 const SearchScreen = () => {
   const { isDarkTheme, currentTheme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
@@ -41,7 +41,7 @@ const SearchScreen = () => {
     try {
       // Encode the search query and ensure it's trimmed
       const encodedQuery = encodeURIComponent(query.trim());
-      const response = await fetch(`${API_URL}?searchValue=${encodedQuery}`, {
+      const response = await fetch(`${API_URL}?search=${encodedQuery}`, {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -54,12 +54,13 @@ const SearchScreen = () => {
       }
 
       const data = await response.json();
-      console.log("Search results:", data); // Debug log
+      //console.log("Search results:", data); // Debug log
 
-      if (data.success) {
-        setWallpapers(data.wallpapers);
+      // Appwrite returns an array directly instead of {success, wallpapers} format
+      if (Array.isArray(data)) {
+        setWallpapers(data);
       } else {
-        throw new Error(data.error || "Failed to fetch wallpapers");
+        throw new Error("Invalid response format");
       }
     } catch (error) {
       console.error("Search error:", error);
@@ -80,15 +81,15 @@ const SearchScreen = () => {
         router.push({
           pathname: "/Screens",
           params: {
-            imageUrl: encodeURIComponent(item.image),
-            name: encodeURIComponent(item.name),
+            imageUrl: encodeURIComponent(item.imageUrl),
+            name: encodeURIComponent(item.title),
           },
         });
       }}
     >
-      <Image source={{ uri: item.image }} style={styles.wallpaperImage} />
+      <Image source={{ uri: item.imageUrl }} style={styles.wallpaperImage} />
       <Text style={styles.wallpaperName} numberOfLines={1}>
-        {item.name}
+        {item.title}
       </Text>
     </TouchableOpacity>
   );
@@ -149,7 +150,7 @@ const SearchScreen = () => {
         <FlatList
           data={wallpapers}
           renderItem={renderWallpaperItem}
-          keyExtractor={(item) => item._id}
+          keyExtractor={(item) => item.$id}
           numColumns={2}
           contentContainerStyle={styles.wallpaperList}
           showsVerticalScrollIndicator={false}

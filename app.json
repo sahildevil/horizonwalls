@@ -2,9 +2,9 @@
   "expo": {
     "name": "Horizon Walls",
     "slug": "horizonwalls",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
-    "icon": "./assets/images/4.png",
+    "icon": "./assets/images/6.png",
     "scheme": "horizonwalls",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -13,7 +13,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/5.png",
+        "foregroundImage": "./assets/images/7.png",
         "backgroundColor": "#ffffff"
       },
       "permissions": [
@@ -39,7 +39,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/4.png",
+          "image": "./assets/images/6.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#000000"

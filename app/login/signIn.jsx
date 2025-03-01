@@ -32,16 +32,16 @@ const SignIn = () => {
 
   return (
     <ImageBackground
-      source={require("../../assets/images/bgLanding.png")}
+      source={require("../../assets/images/landdark.jpg")}
       style={styles.container}
     >
       <StatusBar translucent backgroundColor="transparent" style="light" />
       <Image
-        source={require("../../assets/images/4.png")}
+        source={require("../../assets/images/6.png")}
         style={styles.logo}
       />
       <Text style={styles.title}>Horizon Walls</Text>
-     
+
       <TouchableOpacity
         style={[styles.button, loading && styles.buttonDisabled]}
         onPress={handleSignIn}
@@ -87,9 +87,12 @@ const styles = StyleSheet.create({
     // textShadowRadius: 10,
   },
   button: {
-    backgroundColor: "black",
+    backgroundColor: "tomato",
     padding: 15,
     borderRadius: 20,
+    // borderColor:'black',
+    // borderStyle:'solid',
+    // borderWidth:0.5,
     width: "80%",
     alignItems: "center",
     shadowColor: "#000",

@@ -10,8 +10,8 @@ import Header from "../../components/Header";
 import CategoryCard from "../../components/CategoryCard";
 import { useTheme } from "../../providers/ThemeProvider";
 
-// const API_URL = process.env.EXPO_PUBLIC_API_URL + "/categories";
-const API_URL = "http://192.168.1.3:8000/api/categories";
+const API_URL = process.env.EXPO_PUBLIC_API_URL + "/categories";
+//const API_URL = "http://192.168.1.3:8000/api/categories";
 const Categories = () => {
   const { isDarkTheme, currentTheme } = useTheme();
   const [categories, setCategories] = useState([]);

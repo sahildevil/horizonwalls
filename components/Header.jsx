@@ -125,7 +125,7 @@ const Header = () => {
 
             <View style={styles.menuProfile}>
               <Image
-                source={require("../assets/images/4.png")}
+                source={require("../assets/images/6.png")}
                 style={styles.menuLogo}
               />
               <Text style={[styles.menuAppName, { color: currentTheme.text }]}>

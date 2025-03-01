@@ -14,8 +14,8 @@ import ImageCard from "../../components/ImageCard";
 import { StatusBar } from "expo-status-bar";
 import { useTheme } from "../../providers/ThemeProvider";
 
-//const API_URL = process.env.EXPO_PUBLIC_API_URL + "/wallpapers";
-const API_URL = "http://192.168.1.3:8000/api/wallpapers";
+const API_URL = process.env.EXPO_PUBLIC_API_URL + "/wallpapers";
+//const API_URL = "https://horizonwalls-server.vercel.app/api/wallpapers";
 const { width } = Dimensions.get("window");
 const CARD_MARGIN = 8;
 const CONTAINER_PADDING = 10;
