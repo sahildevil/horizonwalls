@@ -66,11 +66,11 @@ const ImageCard = ({ imageUrl, wallpaperName, style }) => {
           setIsLoading(false);
         }}
       />
-      {wallpaperName && (
+      {/* {wallpaperName && (
         <Text style={[styles.name, { backgroundColor: "rgba(0,0,0,0.7)" }]}>
           {wallpaperName}
         </Text>
-      )}
+      )} */}
     </TouchableOpacity>
   );
 };

@@ -42,9 +42,11 @@ const useRewardedAd = () => {
   const [adError, setAdError] = useState(null);
 
   // Use test ID for both dev and production temporarily to debug
-  const adUnitId = __DEV__
-    ? TestIds.REWARDED
-    : "ca-app-pub-4677981033286236/7236677981";
+  // const adUnitId = __DEV__
+  //   ? TestIds.REWARDED
+  //   : "ca-app-pub-4677981033286236/7236677981";
+
+  const adUnitId = "ca-app-pub-4677981033286236/7236677981";
 
   // Log current environment
   useEffect(() => {
@@ -122,8 +124,18 @@ const useRewardedAd = () => {
 
         setAdError(error.message);
         setIsAdLoading(false);
-        setDownloadPending(false);
-        setLoaded(false);
+
+        // IMPORTANT: If we get a "no-fill" error and have a pending download,
+        // we should trigger the download anyway
+        if (downloadPending) {
+          console.log(
+            "Ad error occurred but download was pending, proceeding with download"
+          );
+          setIsRewarded(true); // Set as rewarded so download will proceed
+        } else {
+          setDownloadPending(false);
+          setLoaded(false);
+        }
       }
     );
 
@@ -180,6 +192,7 @@ const useRewardedAd = () => {
     setDownloadPending,
     resetAdState,
     adError,
+    setIsAdLoading, // Add this to the return object
   };
 };
 
@@ -194,6 +207,7 @@ const DownloadButton = ({ imageUrl, wallpaperName }) => {
     setIsRewarded,
     setDownloadPending,
     resetAdState,
+    setIsAdLoading, // Add this to the destructuring
   } = useRewardedAd();
 
   const handleDownload = async () => {
@@ -202,32 +216,38 @@ const DownloadButton = ({ imageUrl, wallpaperName }) => {
       Alert.alert("Error", "No image URL available for download");
       return;
     }
-  
+
     try {
       setDownloadStarted(true);
       console.log("Starting download process...");
-  
+
       const extension = getFileExtension(imageUrl);
       const baseFileName = wallpaperName
         ? sanitizeFileName(wallpaperName)
         : "wallpaper_" + new Date().getTime();
       const filename = `${baseFileName}.${extension}`;
-  
+
       // Download to cache directory first
       const fileUri = `${FileSystem.cacheDirectory}${filename}`;
       const downloadResult = await FileSystem.downloadAsync(imageUrl, fileUri);
-  
+
       if (Platform.OS === "android") {
         if (Platform.Version >= 31) {
           // ✅ Android 12+ (API 31+) - Save directly without permission
           await MediaLibrary.saveToLibraryAsync(downloadResult.uri);
-          ToastAndroid.show("Wallpaper saved successfully!", ToastAndroid.SHORT);
+          ToastAndroid.show(
+            "Wallpaper saved successfully!",
+            ToastAndroid.SHORT
+          );
         } else {
           // 🔹 Android 11 and below - Request permission first
           const { status } = await MediaLibrary.requestPermissionsAsync();
           if (status === "granted") {
             await MediaLibrary.saveToLibraryAsync(downloadResult.uri);
-            ToastAndroid.show("Wallpaper saved successfully!", ToastAndroid.SHORT);
+            ToastAndroid.show(
+              "Wallpaper saved successfully!",
+              ToastAndroid.SHORT
+            );
           } else {
             Alert.alert(
               "Permission needed",
@@ -239,12 +259,15 @@ const DownloadButton = ({ imageUrl, wallpaperName }) => {
         // iOS - Just save without asking (since permission is handled automatically)
         await MediaLibrary.saveToLibraryAsync(downloadResult.uri);
       }
-  
+
       // Clean up the cached file
       await FileSystem.deleteAsync(fileUri, { idempotent: true });
     } catch (error) {
       console.error("Download error:", error);
-      Alert.alert("Download Failed", "There was an error downloading the wallpaper");
+      Alert.alert(
+        "Download Failed",
+        "There was an error downloading the wallpaper"
+      );
     } finally {
       // ✅ Ensure UI updates correctly
       setDownloadStarted(false);
@@ -257,14 +280,37 @@ const DownloadButton = ({ imageUrl, wallpaperName }) => {
   const handlePress = () => {
     if (isAdLoading) return;
 
-    // Start a timeout to auto-download if the ad doesn't load in 5 seconds
+    // Set state before creating timeout
+    setIsAdLoading(true);
+    setDownloadPending(true);
+
+    // Start a timeout to auto-download if the ad doesn't load in 8 seconds
     const timeout = setTimeout(() => {
       console.log("Ad took too long to load, starting download...");
+
+      // Clear ad loading state
+      setIsAdLoading(false);
+
+      // Go directly to download
       handleDownload();
-    }, 8000); // Changed from 100ms to 5000ms (5 seconds)
+    }, 8000);
 
     setAdTimeout(timeout);
-    showAd();
+
+    // Try to load ad
+    showAd().catch((error) => {
+      console.error("Error in showAd:", error);
+
+      // Clear timeout since we're handling the error
+      if (adTimeout) {
+        clearTimeout(adTimeout);
+        setAdTimeout(null);
+      }
+
+      // Start download as fallback
+      setIsAdLoading(false);
+      handleDownload();
+    });
   };
 
   // Clear timeout when component unmounts
@@ -288,6 +334,53 @@ const DownloadButton = ({ imageUrl, wallpaperName }) => {
       setAdTimeout(null);
     }
   }, [isRewarded, downloadPending, downloadStarted, isAdLoading, adTimeout]);
+
+  // Separate your useEffect logic for better clarity
+  useEffect(() => {
+    // Handle timeout cleanup on unmount
+    return () => {
+      if (adTimeout) {
+        clearTimeout(adTimeout);
+      }
+    };
+  }, [adTimeout]);
+
+  // Handle rewarded state
+  useEffect(() => {
+    // If reward earned and download pending, start download
+    if (isRewarded && downloadPending && !downloadStarted) {
+      console.log("Starting download after reward...");
+
+      // Clear any existing timeouts to avoid double downloads
+      if (adTimeout) {
+        clearTimeout(adTimeout);
+        setAdTimeout(null);
+      }
+
+      handleDownload();
+    }
+  }, [isRewarded, downloadPending, downloadStarted, adTimeout]);
+
+  // Add a fail-safe effect for better reliability
+  useEffect(() => {
+    // If loading state changes to false but we have pending download and no reward yet,
+    // it might mean the ad failed silently
+    if (!isAdLoading && downloadPending && !isRewarded && !downloadStarted) {
+      console.log(
+        "Ad loading finished but no reward granted, checking status..."
+      );
+
+      // Wait a brief moment to see if reward comes in
+      const failsafeTimeout = setTimeout(() => {
+        console.log(
+          "No reward received after ad loading finished, starting download anyway"
+        );
+        handleDownload();
+      }, 2000);
+
+      return () => clearTimeout(failsafeTimeout);
+    }
+  }, [isAdLoading, downloadPending, isRewarded, downloadStarted]);
 
   return (
     <TouchableOpacity
@@ -378,10 +471,7 @@ export default DownloadButton;
 //   }
 // };
 
-
-
 //Different approach to download button
-
 
 // import React, { useEffect, useState, useCallback } from "react";
 // import {

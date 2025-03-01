@@ -9,6 +9,7 @@ import {
   Linking,
   NativeModules,
   ActivityIndicator,
+  Text,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { StatusBar } from "expo-status-bar";
@@ -18,6 +19,7 @@ import Feather from "@expo/vector-icons/Feather";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { BlurView } from "expo-blur";
 import * as FileSystem from "expo-file-system";
+import { useTheme } from "../../providers/ThemeProvider";
 import * as MediaLibrary from "expo-media-library";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -411,22 +413,28 @@ const Screens = () => {
           resizeMode="cover"
         />
       )}
-      <TouchableOpacity style={styles.backbutton} onPress={() => router.back()}>
-        <Ionicons name="chevron-back-outline" size={24} color="white" />
-      </TouchableOpacity>
+
+      {/* Updated Header with Back Button and Title */}
+      <View style={styles.headerContainer}>
+        <TouchableOpacity
+          style={styles.backbutton}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="chevron-back-outline" size={24} color="white" />
+        </TouchableOpacity>
+
+        {wallpaperName && (
+          <Text numberOfLines={1} style={styles.wallpaperTitle}>
+            {wallpaperName}
+          </Text>
+        )}
+
+        {/* Empty view to balance the layout */}
+        <View style={styles.empty} />
+      </View>
 
       <View intensity={100} tint="dark" style={styles.toolbar}>
         <DownloadButton imageUrl={decodedUrl} wallpaperName={wallpaperName} />
-        {/* <TouchableOpacity onPress={downloadImage} disabled={isAdLoading}>
-          {isAdLoading ? (
-            <ActivityIndicator size="small" color="white" />
-          ) : (
-            <Feather name="download" size={24} color="white" />
-          )}
-        </TouchableOpacity> */}
-        {/* <TouchableOpacity onPress={setWallpaper}>
-          <MaterialIcons name="now-wallpaper" size={24} color="white" />
-        </TouchableOpacity> */}
         <TouchableOpacity onPress={toggleFavorite}>
           <AntDesign
             name={isFavorite ? "heart" : "hearto"}
@@ -456,15 +464,43 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
+  headerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: 50,
+    paddingHorizontal: 10,
+    width: "100%",
+  },
   backbutton: {
-    marginLeft: 30,
-    marginTop: 50,
-    backgroundColor: "black",
+    marginLeft: 10,
+    backgroundColor: "rgba(0,0,0,0.5)",
     height: 40,
     width: 40,
     borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
+  },
+  empty: {
+    marginLeft: 10,
+    backgroundColor: "rgba(0,0,0,0)",
+    height: 40,
+    width: 40,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  wallpaperTitle: {
+    fontFamily: "Outfit-Bold",
+    color: "white",
+    fontSize: 20,
+    fontWeight: "bold",
+    textAlign: "center",
+    flex: 1,
+    marginHorizontal: 10,
+    textShadowColor: "rgba(0,0,0,0)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   toolbar: {
     position: "absolute",
@@ -477,6 +513,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 20,
     overflow: "hidden",
-    backgroundColor:'black'
+    backgroundColor: "rgba(0,0,0,0.7)",
   },
+  // Rest of your styles remain the same
 });
