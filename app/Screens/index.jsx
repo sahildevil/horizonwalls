@@ -5,146 +5,54 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
-  PermissionsAndroid,
-  Linking,
-  NativeModules,
-  ActivityIndicator,
   Text,
+  NativeModules,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import Feather from "@expo/vector-icons/Feather";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { BlurView } from "expo-blur";
 import * as FileSystem from "expo-file-system";
-import { useTheme } from "../../providers/ThemeProvider";
 import * as MediaLibrary from "expo-media-library";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-import {
-  RewardedAd,
-  TestIds,
-  AdEventType,
-  RewardedAdEventType,
-} from "react-native-google-mobile-ads";
+import ConsentManager from "../../components/ConsentManager";
 import DownloadButton from "../../components/DownloadButton";
 
-const adUnitIdd = __DEV__
-  ? TestIds.REWARDED
-  : "ca-app-pub-4677981033286236/7236677981";
-const adUnitId = TestIds.REWARDED;
 const Screens = () => {
   const params = useLocalSearchParams();
   const [isFavorite, setIsFavorite] = useState(false);
   const [decodedUrl, setDecodedUrl] = useState(null);
   const [wallpaperName, setWallpaperName] = useState(null);
   const router = useRouter();
-  const [loaded, setLoaded] = useState(false);
-  const [isRewarded, setIsRewarded] = useState(false);
-  const [adInstance, setAdInstance] = useState(null);
-  const [downloadPending, setDownloadPending] = useState(false);
-  const [currentAd, setCurrentAd] = useState(null);
-  const [isAdLoading, setIsAdLoading] = useState(false);
+  const [consentDetermined, setConsentDetermined] = useState(false);
+  const [personalizedAdsAllowed, setPersonalizedAdsAllowed] = useState(false);
+
+  // Function to handle consent determination
+  const handleConsentDetermined = (consentGiven) => {
+    setConsentDetermined(true);
+    setPersonalizedAdsAllowed(consentGiven);
+    console.log(
+      `User consent for personalized ads: ${
+        consentGiven ? "Granted" : "Denied"
+      }`
+    );
+  };
 
   useEffect(() => {
     checkFavorite();
   }, [decodedUrl]);
 
-  // Initialize ad on component mount
   useEffect(() => {
-    const createAndLoadAd = () => {
-      const newAd = RewardedAd.createForAdRequest(adUnitId, {
-        requestNonPersonalizedAdsOnly: true,
-        keywords: ["wallpaper", "art", "design"],
-      });
-
-      const unsubscribeLoaded = newAd.addAdEventListener(
-        RewardedAdEventType.LOADED,
-        () => {
-          console.log("Ad loaded successfully");
-          setLoaded(true);
-          setCurrentAd(newAd);
-        }
-      );
-
-      const unsubscribeEarned = newAd.addAdEventListener(
-        RewardedAdEventType.EARNED_REWARD,
-        () => {
-          console.log("User earned reward");
-          setIsRewarded(true);
-          setDownloadPending(true); // Set download pending when reward is earned
-        }
-      );
-
-      const unsubscribeClosed = newAd.addAdEventListener(
-        AdEventType.CLOSED,
-        () => {
-          console.log("Ad closed");
-          setLoaded(false);
-          setCurrentAd(null);
-          // Load new ad immediately
-          createAndLoadAd();
-        }
-      );
-
-      newAd.load();
-
-      return () => {
-        unsubscribeLoaded();
-        unsubscribeEarned();
-        unsubscribeClosed();
-      };
-    };
-
-    const cleanup = createAndLoadAd();
-    return cleanup;
-  }, []);
-
-  // Handle download when reward is earned
-  useEffect(() => {
-    const performDownload = async () => {
-      if (isRewarded && downloadPending && decodedUrl) {
-        try {
-          const extension = getFileExtension(decodedUrl);
-          const baseFileName = wallpaperName
-            ? sanitizeFileName(wallpaperName)
-            : "wallpaper_" + new Date().getTime();
-          const filename = `${baseFileName}.${extension}`;
-
-          console.log("Starting download for:", filename);
-
-          const directory = `${FileSystem.documentDirectory}HorizonWalls/`;
-          await FileSystem.makeDirectoryAsync(directory, {
-            intermediates: true,
-          });
-
-          const fileUri = `${directory}${filename}`;
-
-          console.log("Downloading from:", decodedUrl);
-          const { uri } = await FileSystem.downloadAsync(decodedUrl, fileUri);
-          await MediaLibrary.saveToLibraryAsync(uri);
-
-          Alert.alert(
-            "Download Complete",
-            `Wallpaper saved in the "HorizonWalls" folder!`
-          );
-
-          console.log("Successfully saved at:", uri);
-        } catch (error) {
-          console.error("Download error:", error);
-          Alert.alert("Error", "Failed to download image.");
-        } finally {
-          setIsRewarded(false);
-          setDownloadPending(false);
-        }
-      }
-    };
-
-    performDownload();
-  }, [isRewarded, downloadPending, decodedUrl, wallpaperName]); // Empty dependency array since we want this only on mount
+    if (params.imageUrl) {
+      const decoded = decodeURIComponent(params.imageUrl);
+      setDecodedUrl(decoded);
+    }
+    if (params.name) {
+      const decodedName = decodeURIComponent(params.name);
+      setWallpaperName(decodedName);
+    }
+  }, [params.imageUrl, params.name]);
 
   const checkFavorite = async () => {
     try {
@@ -188,23 +96,6 @@ const Screens = () => {
     }
   };
 
-  useEffect(() => {
-    if (params.imageUrl) {
-      const decoded = decodeURIComponent(params.imageUrl);
-      setDecodedUrl(decoded);
-      setIsRewarded(false);
-      setDownloadPending(false);
-
-      if (adInstance) {
-        adInstance.load();
-      }
-    }
-    if (params.name) {
-      const decodedName = decodeURIComponent(params.name);
-      setWallpaperName(decodedName);
-    }
-  }, [params.imageUrl, params.name]);
-
   const sanitizeFileName = (name) => {
     return name.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
   };
@@ -216,114 +107,7 @@ const Screens = () => {
     if (validExtensions.includes(urlExtension.toLowerCase())) {
       return urlExtension.toLowerCase();
     }
-
     return "png";
-  };
-
-  const downloadImage = async () => {
-    // If ad is already loaded, show it immediately
-    if (loaded && currentAd) {
-      try {
-        await currentAd.show();
-      } catch (error) {
-        console.error("Error showing ad:", error);
-        Alert.alert("Error", "Failed to show ad. Please try again.");
-        setLoaded(false);
-        setCurrentAd(null);
-        setIsAdLoading(false);
-      }
-      return;
-    }
-
-    // If no ad is loaded, start loading process
-    setIsAdLoading(true);
-
-    const newAd = RewardedAd.createForAdRequest(adUnitId, {
-      requestNonPersonalizedAdsOnly: true,
-      keywords: ["wallpaper", "art", "design"],
-    });
-
-    try {
-      // Set up event listeners
-      const loadPromise = new Promise((resolve, reject) => {
-        const unsubscribe = newAd.addAdEventListener(
-          RewardedAdEventType.LOADED,
-          () => {
-            console.log("Ad loaded successfully");
-            unsubscribe();
-            resolve();
-          }
-        );
-
-        // Add error handling
-        const unsubscribeError = newAd.addAdEventListener(
-          RewardedAdEventType.FAILED_TO_LOAD,
-          (error) => {
-            console.error("Ad failed to load:", error);
-            unsubscribeError();
-            reject(new Error("Failed to load ad"));
-          }
-        );
-
-        // Start loading the ad
-        newAd.load();
-      });
-
-      // Wait for ad to load
-      await loadPromise;
-
-      setLoaded(true);
-      setCurrentAd(newAd);
-      setIsAdLoading(false);
-
-      // Show ad
-      await newAd.show();
-    } catch (error) {
-      console.error("Error in ad flow:", error);
-      Alert.alert("Error", "Failed to load or show ad. Please try again.");
-      setLoaded(false);
-      setCurrentAd(null);
-      setIsAdLoading(false);
-    }
-  };
-
-  const handleDownload = async () => {
-    if (!decodedUrl) {
-      console.log("No URL available for download");
-      return;
-    }
-
-    try {
-      const extension = getFileExtension(decodedUrl);
-      const baseFileName = wallpaperName
-        ? sanitizeFileName(wallpaperName)
-        : "wallpaper_" + new Date().getTime();
-      const filename = `${baseFileName}.${extension}`;
-
-      console.log("Starting download for:", filename);
-
-      const directory = `${FileSystem.documentDirectory}HorizonWalls/`;
-      await FileSystem.makeDirectoryAsync(directory, { intermediates: true });
-
-      const fileUri = `${directory}${filename}`;
-
-      console.log("Downloading from:", decodedUrl);
-      const { uri } = await FileSystem.downloadAsync(decodedUrl, fileUri);
-      await MediaLibrary.saveToLibraryAsync(uri);
-
-      Alert.alert(
-        "Download Complete",
-        `Wallpaper saved in the "HorizonWalls" folder!`
-      );
-
-      console.log("Successfully saved at:", uri);
-    } catch (error) {
-      console.error("Download error:", error);
-      Alert.alert("Error", "Failed to download image.");
-    } finally {
-      setIsRewarded(false);
-      setDownloadPending(false);
-    }
   };
 
   const setWallpaper = async () => {
@@ -403,6 +187,14 @@ const Screens = () => {
     }
   };
 
+  // Function to pass personalization options to DownloadButton
+  const getAdRequestOptions = () => {
+    return {
+      requestNonPersonalizedAdsOnly: !personalizedAdsAllowed,
+      keywords: ["wallpaper", "art", "design"],
+    };
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar translucent style="auto" />
@@ -414,7 +206,7 @@ const Screens = () => {
         />
       )}
 
-      {/* Updated Header with Back Button and Title */}
+      {/* Header with Back Button and Title */}
       <View style={styles.headerContainer}>
         <TouchableOpacity
           style={styles.backbutton}
@@ -429,12 +221,17 @@ const Screens = () => {
           </Text>
         )}
 
-        {/* Empty view to balance the layout */}
         <View style={styles.empty} />
       </View>
 
+      <ConsentManager onConsentDetermined={handleConsentDetermined} />
+
       <View intensity={100} tint="dark" style={styles.toolbar}>
-        <DownloadButton imageUrl={decodedUrl} wallpaperName={wallpaperName} />
+        <DownloadButton
+          imageUrl={decodedUrl}
+          wallpaperName={wallpaperName}
+          adRequestOptions={getAdRequestOptions()}
+        />
         <TouchableOpacity onPress={toggleFavorite}>
           <AntDesign
             name={isFavorite ? "heart" : "hearto"}

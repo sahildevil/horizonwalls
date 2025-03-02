@@ -8,14 +8,14 @@ import {
   RefreshControl,
   TouchableOpacity,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import Header from "../../components/Header";
 import ImageCard from "../../components/ImageCard";
 import { StatusBar } from "expo-status-bar";
 import { useTheme } from "../../providers/ThemeProvider";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL + "/wallpapers";
-//const API_URL = "https://horizonwalls-server.vercel.app/api/wallpapers";
+//const API_URL = process.env.EXPO_PUBLIC_API_URL + "/wallpapers";
+const API_URL = "http://192.168.1.3:8000/api/wallpapers";
 const { width } = Dimensions.get("window");
 const CARD_MARGIN = 8;
 const CONTAINER_PADDING = 10;
@@ -33,27 +33,138 @@ const Home = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-  const fetchWallpapers = async (pageNum = 1, shouldRefresh = false) => {
+  // For cursor-based pagination
+  const [nextCursor, setNextCursor] = useState(null);
+
+  // Track wallpaper IDs to avoid duplicates
+  const [wallpaperIds, setWallpaperIds] = useState(new Set());
+
+  // Add a state to track if we're already at the end
+  const [isEndReached, setIsEndReached] = useState(false);
+
+  // Add a ref to track if we're already fetching
+  const isFetchingRef = useRef(false);
+
+  const fetchWallpapers = async (shouldRefresh = false) => {
     try {
-      console.log(`Fetching wallpapers for page ${pageNum}...`);
-      const response = await fetch(`${API_URL}?page=${pageNum}&limit=20`);
+      console.log(
+        `Fetching wallpapers (refresh: ${shouldRefresh}, cursor: ${
+          nextCursor || "initial"
+        })`
+      );
+
+      if (!hasMore && !shouldRefresh) {
+        console.log("No more wallpapers to fetch");
+        setLoadingMore(false);
+        return;
+      }
+
+      // Construct URL based on whether this is initial or subsequent fetch
+      let url = `${API_URL}?limit=20`;
+      if (!shouldRefresh && nextCursor) {
+        url += `&cursor=${nextCursor}`;
+      }
+
+      // Add a random cache buster to prevent caching issues
+      url += `&_=${new Date().getTime()}`;
+
+      console.log("Fetching from URL:", url);
+
+      const response = await fetch(url);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      const responseData = await response.json();
+      console.log("Raw API response:", responseData);
+
+      const data = responseData.documents || responseData;
+
+      // Check if the API returns pagination info
+      const paginationInfo = responseData.pagination;
+
       console.log("Fetched wallpapers count:", data.length);
+      console.log("Pagination info:", paginationInfo);
 
-      // Update wallpapers state - data is now directly an array from Appwrite
-      setWallpapers((prev) => (shouldRefresh ? data : [...prev, ...data]));
+      // If server provides pagination info, use it
+      if (paginationInfo) {
+        const cursorExists = !!paginationInfo.nextCursor;
+        console.log(
+          `Setting hasMore to ${cursorExists} based on nextCursor existence`
+        );
+        setHasMore(cursorExists);
+        setNextCursor(paginationInfo.nextCursor);
+      } else {
+        // Fallback to checking length
+        const newHasMore = data.length >= 20;
+        console.log(
+          `Setting hasMore to ${newHasMore} based on data length check`
+        );
+        setHasMore(newHasMore);
+      }
 
-      // Check if there are more wallpapers
-      setHasMore(data.length === 20);
-      setError(null);
+      // Handle empty response
+      if (data.length === 0) {
+        console.log("No data returned, setting hasMore to false");
+        setHasMore(false);
+        setLoading(false);
+        setLoadingMore(false);
+        setRefreshing(false);
+        return;
+      }
+
+      // Create a new array to hold unique wallpapers
+      let newWallpapers;
+
+      if (shouldRefresh) {
+        // On refresh, reset everything and use new data
+        newWallpapers = data;
+
+        // Reset the ID tracking Set
+        const newIds = new Set();
+        data.forEach((wallpaper) => newIds.add(wallpaper.$id));
+        console.log(`Reset wallpaperIds, new count: ${newIds.size}`);
+        setWallpaperIds(newIds);
+      } else {
+        // Filter out any duplicates
+        newWallpapers = data.filter(
+          (wallpaper) => !wallpaperIds.has(wallpaper.$id)
+        );
+
+        console.log(
+          `After filtering, found ${newWallpapers.length} new unique wallpapers`
+        );
+
+        // If no new unique wallpapers were found, we've reached the end
+        if (newWallpapers.length === 0) {
+          console.log("No new unique wallpapers found, ending pagination");
+          setHasMore(false);
+          setLoading(false);
+          setLoadingMore(false);
+          setRefreshing(false);
+          return;
+        }
+
+        // Update our set of wallpaper IDs
+        const newIds = new Set(wallpaperIds);
+        newWallpapers.forEach((wallpaper) => newIds.add(wallpaper.$id));
+        console.log(`Updated wallpaperIds, new count: ${newIds.size}`);
+        setWallpaperIds(newIds);
+      }
+
+      // Update the wallpapers array
+      if (shouldRefresh) {
+        console.log(`Setting ${newWallpapers.length} wallpapers (refresh)`);
+        setWallpapers(newWallpapers);
+      } else {
+        console.log(
+          `Adding ${newWallpapers.length} new wallpapers to existing ${wallpapers.length}`
+        );
+        setWallpapers((prev) => [...prev, ...newWallpapers]);
+      }
     } catch (error) {
       console.error("Error fetching wallpapers:", error);
       setError(error.message);
@@ -61,28 +172,90 @@ const Home = () => {
       setLoading(false);
       setLoadingMore(false);
       setRefreshing(false);
+      isFetchingRef.current = false;
     }
   };
 
   // Initial fetch
   useEffect(() => {
-    fetchWallpapers(1, true);
+    fetchWallpapers(true);
   }, []);
 
-  const onRefresh = React.useCallback(() => {
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
-    setPage(1);
-    fetchWallpapers(1, true);
+    setNextCursor(null); // Clear cursor on refresh
+    setHasMore(true);
+    setWallpaperIds(new Set());
+    fetchWallpapers(true);
   }, []);
 
-  const loadMore = () => {
-    if (!loadingMore && hasMore && !refreshing) {
-      setLoadingMore(true);
-      const nextPage = page + 1;
-      setPage(nextPage);
-      fetchWallpapers(nextPage);
+  const loadMore = useCallback(() => {
+    if (loadingMore) {
+      console.log("Already loading more, ignoring request");
+      return;
     }
-  };
+
+    if (!hasMore) {
+      console.log("No more data to load");
+      return;
+    }
+
+    if (refreshing) {
+      console.log("Currently refreshing, ignoring load more");
+      return;
+    }
+
+    if (!nextCursor) {
+      console.log("No next cursor available");
+      return;
+    }
+
+    console.log("Loading more wallpapers, cursor:", nextCursor);
+    setLoadingMore(true);
+
+    // Add a slight delay to prevent race conditions
+    setTimeout(() => {
+      fetchWallpapers(false);
+    }, 300);
+  }, [loadingMore, hasMore, refreshing, nextCursor, fetchWallpapers]);
+
+  const onEndReachedHandler = useCallback(
+    ({ distanceFromEnd }) => {
+      console.log(`End reached with distance ${distanceFromEnd}`);
+
+      if (
+        isFetchingRef.current ||
+        !hasMore ||
+        loadingMore ||
+        refreshing ||
+        isEndReached
+      ) {
+        console.log("Skipping end reached due to:", {
+          isAlreadyFetching: isFetchingRef.current,
+          hasMore,
+          loadingMore,
+          refreshing,
+          isEndReached,
+        });
+        return;
+      }
+
+      console.log("Will load more content");
+      isFetchingRef.current = true;
+      setIsEndReached(true);
+
+      // Using setTimeout to avoid state update conflicts
+      setTimeout(() => {
+        loadMore();
+
+        // Reset the flags after a delay
+        setTimeout(() => {
+          setIsEndReached(false);
+        }, 1000);
+      }, 100);
+    },
+    [hasMore, loadingMore, refreshing, isEndReached, loadMore]
+  );
 
   const renderFooter = () => {
     if (!loadingMore) return null;
@@ -91,6 +264,17 @@ const Home = () => {
         <ActivityIndicator size="small" color="tomato" />
       </View>
     );
+  };
+
+  const renderEndMessage = () => {
+    if (wallpapers.length > 0 && !hasMore && !loadingMore) {
+      return (
+        <Text style={[styles.endMessage, { color: currentTheme.text }]}>
+          No more wallpapers available
+        </Text>
+      );
+    }
+    return null;
   };
 
   if (loading) {
@@ -121,7 +305,7 @@ const Home = () => {
         </Text>
         <TouchableOpacity
           style={styles.retryButton}
-          onPress={() => fetchWallpapers(1, true)}
+          onPress={() => fetchWallpapers(true)}
         >
           <Text style={styles.retryButtonText}>Retry</Text>
         </TouchableOpacity>
@@ -137,12 +321,12 @@ const Home = () => {
       <Header />
       <FlatList
         data={wallpapers}
-        keyExtractor={(item) => item.$id} // Changed from _id to $id for Appwrite
+        keyExtractor={(item) => item.$id}
         renderItem={({ item }) => (
           <View style={{ margin: CARD_MARGIN }}>
             <ImageCard
-              imageUrl={item.imageUrl} // Changed from image to imageUrl
-              wallpaperName={item.title} // Changed from name to title
+              imageUrl={item.imageUrl}
+              wallpaperName={item.title}
               style={[
                 styles.card,
                 { backgroundColor: currentTheme.cardBackground },
@@ -161,9 +345,19 @@ const Home = () => {
             tintColor="#4285F4"
           />
         }
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={renderFooter}
+        onEndReached={onEndReachedHandler}
+        onEndReachedThreshold={0.2}
+        ListFooterComponent={
+          <>
+            {renderFooter()}
+            {renderEndMessage()}
+          </>
+        }
+        initialNumToRender={10}
+        windowSize={5}
+        maxToRenderPerBatch={10}
+        updateCellsBatchingPeriod={50}
+        removeClippedSubviews={true}
       />
     </View>
   );
@@ -226,6 +420,11 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontFamily: "Outfit-Bold",
+  },
+  endMessage: {
+    textAlign: "center",
+    padding: 10,
+    fontFamily: "Outfit-Regular",
   },
 });
 
