@@ -66,7 +66,7 @@ const AboutUs = () => {
           Horizon Walls
         </Text>
         <Text style={[styles.version, { color: currentTheme.secondary }]}>
-          Version 1.0.3
+          Version 1.0.4
         </Text>
 
         <View style={styles.section}>
