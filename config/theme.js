@@ -4,7 +4,7 @@ export const theme = {
     text: "#1a1a1a",
     primary: "#4285F4",
     secondary: "#666666",
-    cardBackground: "#f0f0f0",
+    cardBackground: "#F7F7F7",
     borderColor: "#dddddd",
     dialogtext: "#000000",
     closebutton: "#999999",

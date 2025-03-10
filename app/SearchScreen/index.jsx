@@ -130,7 +130,7 @@ const SearchScreen = () => {
 
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={currentTheme.primary} />
+          <ActivityIndicator size="large" color='tomato' />
         </View>
       ) : error ? (
         <View style={styles.centerContainer}>

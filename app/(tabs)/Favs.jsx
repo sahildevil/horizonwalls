@@ -14,6 +14,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useTheme } from "../../providers/ThemeProvider";
 import { StatusBar } from "expo-status-bar";
 import ImageCard from "../../components/ImageCard";
+import { useScrollContext } from "../../providers/ScrollContext";
 
 const { width } = Dimensions.get("window");
 const CARD_MARGIN = 8;
@@ -31,6 +32,7 @@ const Favs = () => {
   const { isDarkTheme, currentTheme } = useTheme();
   const [favorites, setFavorites] = useState([]);
   const router = useRouter();
+  const { handleScroll } = useScrollContext();
 
   // Use useFocusEffect instead of useEffect
   useFocusEffect(
@@ -89,6 +91,8 @@ const Favs = () => {
         ]}
         ListEmptyComponent={renderEmptyList}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       />
     </View>
   );

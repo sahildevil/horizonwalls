@@ -343,8 +343,8 @@ const Home = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#4285F4"]}
-            tintColor="#4285F4"
+            colors={["tomato"]}
+            tintColor="tomato"
           />
         }
         onScroll={handleScroll} // Add this line

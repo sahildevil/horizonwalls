@@ -289,7 +289,7 @@ const CategoryDetails = () => {
     if (!loadingMore) return null;
     return (
       <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" color={currentTheme.primary} />
+        <ActivityIndicator size="small" color='tomato' />
       </View>
     );
   };
@@ -310,7 +310,7 @@ const CategoryDetails = () => {
       <View
         style={[styles.loader, { backgroundColor: currentTheme.background }]}
       >
-        <ActivityIndicator size="large" color={currentTheme.primary} />
+        <ActivityIndicator size="large" color='tomato' />
       </View>
     );
   }

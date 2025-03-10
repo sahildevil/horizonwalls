@@ -9,11 +9,13 @@ import React, { useEffect, useState } from "react";
 import Header from "../../components/Header";
 import CategoryCard from "../../components/CategoryCard";
 import { useTheme } from "../../providers/ThemeProvider";
+import { useScrollContext } from "../../providers/ScrollContext";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL + "/categories";
 //const API_URL = "http://192.168.1.3:8000/api/categories";
 const Categories = () => {
   const { isDarkTheme, currentTheme } = useTheme();
+  const { handleScroll } = useScrollContext();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -48,7 +50,7 @@ const Categories = () => {
       <View
         style={[styles.loader, { backgroundColor: currentTheme.background }]}
       >
-        <ActivityIndicator size="large" color={currentTheme.primary} />
+        <ActivityIndicator size="large" color='tomato' />
       </View>
     );
   }
@@ -87,6 +89,8 @@ const Categories = () => {
         )}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       />
     </View>
   );

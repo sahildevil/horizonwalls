@@ -51,7 +51,7 @@ const ImageCard = ({ imageUrl, wallpaperName, style }) => {
     >
       {isLoading && (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color={currentTheme.primary} />
+          <ActivityIndicator size="small" color='tomato' />
         </View>
       )}
       <Image
