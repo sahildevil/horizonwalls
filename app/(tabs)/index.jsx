@@ -13,6 +13,7 @@ import Header from "../../components/Header";
 import ImageCard from "../../components/ImageCard";
 import { StatusBar } from "expo-status-bar";
 import { useTheme } from "../../providers/ThemeProvider";
+import { useScrollContext } from "../../providers/ScrollContext";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL + "/wallpapers";
 //const API_URL = "http://192.168.1.3:8000/api/wallpapers";
@@ -28,6 +29,7 @@ const CARD_HEIGHT = (CARD_WIDTH * 16) / 9;
 
 const Home = () => {
   const { isDarkTheme, currentTheme } = useTheme();
+  const { handleScroll } = useScrollContext();
   const [wallpapers, setWallpapers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -345,6 +347,8 @@ const Home = () => {
             tintColor="#4285F4"
           />
         }
+        onScroll={handleScroll} // Add this line
+        scrollEventThrottle={16} // Add this line for smooth scrolling
         onEndReached={onEndReachedHandler}
         onEndReachedThreshold={0.2}
         ListFooterComponent={

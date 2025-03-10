@@ -9,14 +9,17 @@ import {
   Platform,
   SafeAreaView,
   Dimensions,
+  Animated,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useScrollContext } from "../../providers/ScrollContext";
 
 export default function _layout() {
   const router = useRouter();
   const { isDarkTheme, currentTheme } = useTheme();
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = Dimensions.get("window");
+  const { tabBarAnimation } = useScrollContext();
 
   // Calculate tab bar width (70% of screen width)
   const tabBarWidth = screenWidth * 0.7;
@@ -50,6 +53,13 @@ export default function _layout() {
           alignSelf: "center", // Ensure it's centered
           marginHorizontal: (screenWidth - tabBarWidth) / 2,
           ...styles.shadow,
+          // This is the magic! We wrap the tab bar in an Animated.View
+          // and use translateY to move it up and down
+          transform: [
+            {
+              translateY: tabBarAnimation,
+            },
+          ],
         },
         tabBarLabelStyle: {
           display: "none",

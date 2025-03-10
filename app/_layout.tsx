@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import * as Font from 'expo-font';
 import { fonts } from '../config/fonts';
 import { ThemeProvider } from "../providers/ThemeProvider";
+import { ScrollProvider } from "../providers/ScrollContext";
+
 export default function RootLayout() {
   const [isMounted, setIsMounted] = useState(false);
 
@@ -16,22 +18,24 @@ export default function RootLayout() {
   }, []);
 
   if (!isMounted) {
-    return null; // Render nothing until the layout is mounted
+    return null;
   }
 
   return (
     <ThemeProvider>
-    <AuthProvider>
-      <Stack screenOptions={{ headerShown: false }} initialRouteName="index">
-        <Stack.Screen name="index" />
-        <Stack.Screen name="login" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="Screens" />
-        <Stack.Screen name="SearchScreen" />
-        <Stack.Screen name="AboutUs" />
-        <Stack.Screen name="ContactUs" />
-      </Stack>
-    </AuthProvider>
+      <AuthProvider>
+        <ScrollProvider>
+          <Stack screenOptions={{ headerShown: false }} initialRouteName="index">
+            <Stack.Screen name="index" />
+            <Stack.Screen name="login" />
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="Screens" />
+            <Stack.Screen name="SearchScreen" />
+            <Stack.Screen name="AboutUs" />
+            <Stack.Screen name="ContactUs" />
+          </Stack>
+        </ScrollProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
