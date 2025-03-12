@@ -85,7 +85,7 @@ const Categories = () => {
             ]}
           />
         )}
-        numColumns={2}
+        numColumns={1}
         contentContainerStyle={styles.gridContainer}
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   categoryCard: {
     flex: 1,
     margin: 8,
-    height: 120,
+    height: 150,
     borderRadius: 12,
     backgroundColor: "#f0f0f0",
     overflow: "hidden",

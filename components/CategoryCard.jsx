@@ -39,7 +39,7 @@ const CategoryCard = ({ category, style }) => {
         imageStyle={styles.imageStyle}
       >
         <LinearGradient
-          colors={["transparent", "rgba(0,0,0,0.7)"]}
+          colors={["transparent", "rgba(0,0,0,0.4)"]}
           style={styles.gradient}
         >
           <Text style={styles.title}>{name}</Text>
