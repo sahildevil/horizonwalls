@@ -7,7 +7,7 @@ const client = new Client();
 // Replace with your Appwrite endpoint and project ID
 client
   .setEndpoint("https://cloud.appwrite.io/v1") // Replace with your Appwrite endpoint
-  .setProject("YOUR_PROJECT_ID"); // Replace with your project ID
+  .setProject("67c14b690038af18eaa3"); // Replace with your project ID
 
 // Initialize Appwrite services
 export const account = new Account(client);
@@ -15,9 +15,9 @@ export const databases = new Databases(client);
 export const storage = new Storage(client);
 
 // Use the same IDs as your server
-const DATABASE_ID = "YOUR_DATABASE_ID";
-const WALLPAPERS_COLLECTION_ID = "YOUR_WALLPAPERS_COLLECTION_ID";
-const CATEGORIES_COLLECTION_ID = "YOUR_CATEGORIES_COLLECTION_ID";
+const DATABASE_ID = process.env.DATABASE_ID;
+const WALLPAPERS_COLLECTION_ID = process.env.WALLPAPERS_COLLECTION_ID;
+const CATEGORIES_COLLECTION_ID = process.env.CATEGORIES_COLLECTION_ID;
 
 // Service functions for wallpapers
 export const wallpaperService = {

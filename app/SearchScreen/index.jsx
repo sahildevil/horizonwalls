@@ -57,8 +57,8 @@ const SearchScreen = () => {
       //console.log("Search results:", data); // Debug log
 
       // Appwrite returns an array directly instead of {success, wallpapers} format
-      if (Array.isArray(data)) {
-        setWallpapers(data);
+      if (data.documents && Array.isArray(data.documents)) {
+        setWallpapers(data.documents); // Use `documents` array
       } else {
         throw new Error("Invalid response format");
       }

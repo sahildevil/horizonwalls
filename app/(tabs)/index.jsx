@@ -14,9 +14,8 @@ import ImageCard from "../../components/ImageCard";
 import { StatusBar } from "expo-status-bar";
 import { useTheme } from "../../providers/ThemeProvider";
 import { useScrollContext } from "../../providers/ScrollContext";
+import { wallpaperService } from "../../services/appwrite";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL + "/wallpapers";
-//const API_URL = "http://192.168.1.3:8000/api/wallpapers";
 const { width } = Dimensions.get("window");
 const CARD_MARGIN = 8;
 const CONTAINER_PADDING = 10;
@@ -63,35 +62,21 @@ const Home = () => {
         return;
       }
 
-      // Construct URL based on whether this is initial or subsequent fetch
-      let url = `${API_URL}?limit=20`;
-      if (!shouldRefresh && nextCursor) {
-        url += `&cursor=${nextCursor}`;
-      }
+      // Use direct Appwrite service instead of API call
+      const response = await wallpaperService.getWallpapers(
+        20,                      // limit
+        shouldRefresh ? null : nextCursor // cursor (null if refreshing)
+      );
 
-      // Add a random cache buster to prevent caching issues
-      url += `&_=${new Date().getTime()}`;
-
-      console.log("Fetching from URL:", url);
-
-      const response = await fetch(url);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const responseData = await response.json();
-      console.log("Raw API response:", responseData);
-
-      const data = responseData.documents || responseData;
-
-      // Check if the API returns pagination info
-      const paginationInfo = responseData.pagination;
+      console.log("Appwrite response:", response);
+      
+      const data = response.documents;
+      const paginationInfo = response.pagination;
 
       console.log("Fetched wallpapers count:", data.length);
       console.log("Pagination info:", paginationInfo);
 
-      // If server provides pagination info, use it
+      // Handle pagination
       if (paginationInfo) {
         const cursorExists = !!paginationInfo.nextCursor;
         console.log(
@@ -100,7 +85,6 @@ const Home = () => {
         setHasMore(cursorExists);
         setNextCursor(paginationInfo.nextCursor);
       } else {
-        // Fallback to checking length
         const newHasMore = data.length >= 20;
         console.log(
           `Setting hasMore to ${newHasMore} based on data length check`
@@ -219,7 +203,7 @@ const Home = () => {
     setTimeout(() => {
       fetchWallpapers(false);
     }, 300);
-  }, [loadingMore, hasMore, refreshing, nextCursor, fetchWallpapers]);
+  }, [loadingMore, hasMore, refreshing, nextCursor]);
 
   const onEndReachedHandler = useCallback(
     ({ distanceFromEnd }) => {
@@ -347,8 +331,8 @@ const Home = () => {
             tintColor="tomato"
           />
         }
-        onScroll={handleScroll} // Add this line
-        scrollEventThrottle={16} // Add this line for smooth scrolling
+        onScroll={handleScroll} 
+        scrollEventThrottle={16} 
         onEndReached={onEndReachedHandler}
         onEndReachedThreshold={0.2}
         ListFooterComponent={
