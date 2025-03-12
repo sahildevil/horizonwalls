@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   Platform,
   ToastAndroid,
+  Text,
 } from "react-native";
 import {
   RewardedAd,
@@ -574,6 +575,7 @@ const DownloadButton = ({
       ) : (
         <Feather name="download" size={24} color="white" />
       )}
+      <Text style={styles.toolbarButtonLabel}>Save</Text>
     </TouchableOpacity>
   );
 };
@@ -581,6 +583,16 @@ const DownloadButton = ({
 const styles = StyleSheet.create({
   downloadButton: {
     padding: 10,
+    alignItems: "center",
+  },
+  toolbarButtonLabel: {
+    color: "white",
+    fontSize: 12,
+    marginTop: 5,
+    fontFamily: "Outfit-Medium",
+    textShadowColor: "rgba(0,0,0,0.75)",
+    textShadowOffset: { width: 0.5, height: 0.5 },
+    textShadowRadius: 2,
   },
 });
 
