@@ -14,7 +14,7 @@ import { useTheme } from "../providers/ThemeProvider";
 const { width } = Dimensions.get("window");
 const cardWidth = (width - 30) / 2;
 
-const ImageCard = ({ imageUrl, wallpaperName, style, id }) => {
+const ImageCard = ({ imageUrl, wallpaperName, style, id, params }) => {
   const router = useRouter();
   const { currentTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
@@ -26,14 +26,25 @@ const ImageCard = ({ imageUrl, wallpaperName, style, id }) => {
 
     console.log("Navigating with name:", wallpaperName);
 
+    // Create navigation params
+    const navigationParams = {
+      imageUrl: encodedUrl,
+      name: encodedName,
+    };
+
+    // Add id if it exists
+    if (id) {
+      navigationParams.id = id;
+    }
+
+    // Add categoryId if it exists in params
+    if (params && params.categoryId) {
+      navigationParams.categoryId = params.categoryId;
+    }
+
     router.push({
       pathname: "/Screens",
-      params: {
-        imageUrl: encodedUrl,
-        name: encodedName,
-        // Only pass id if it exists
-        ...(id && { id }),
-      },
+      params: navigationParams,
     });
   };
 

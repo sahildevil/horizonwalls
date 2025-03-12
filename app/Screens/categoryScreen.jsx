@@ -436,6 +436,8 @@ const CategoryDetails = () => {
               <ImageCard
                 imageUrl={item.imageUrl}
                 wallpaperName={item.title}
+                id={item.$id}
+                params={{ categoryId: categoryId }} // Pass the category context
                 style={[
                   styles.card,
                   { backgroundColor: currentTheme.cardBackground },

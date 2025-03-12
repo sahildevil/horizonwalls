@@ -16,8 +16,10 @@ export const storage = new Storage(client);
 
 // Use the same IDs as your server - make sure these are strings
 export const DATABASE_ID = process.env.EXPO_PUBLIC_DATABASE_ID;
-export const WALLPAPERS_COLLECTION_ID = process.env.EXPO_PUBLIC_WALLPAPERS_COLLECTION_ID;
-export const CATEGORIES_COLLECTION_ID = process.env.EXPO_PUBLIC_CATEGORIES_COLLECTION_ID;
+export const WALLPAPERS_COLLECTION_ID =
+  process.env.EXPO_PUBLIC_WALLPAPERS_COLLECTION_ID;
+export const CATEGORIES_COLLECTION_ID =
+  process.env.EXPO_PUBLIC_CATEGORIES_COLLECTION_ID;
 
 // Export Query for use in components
 export { Query };
@@ -77,10 +79,45 @@ export const wallpaperService = {
     }
   },
 
-  // Get wallpapers by category
+  // Get wallpapers by category with pagination
   getWallpapersByCategory: async (categoryId, limit = 20, cursor = null) => {
     try {
-      return await this.getWallpapers(limit, cursor, categoryId);
+      console.log(
+        `Fetching wallpapers for category ${categoryId} with cursor ${
+          cursor || "initial"
+        }`
+      );
+      let queries = [
+        Query.equal("categoryId", categoryId),
+        Query.limit(limit),
+        Query.orderDesc("$createdAt"),
+      ];
+
+      // Add cursor for pagination if provided
+      if (cursor) {
+        queries.push(Query.cursorAfter(cursor));
+      }
+
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        WALLPAPERS_COLLECTION_ID,
+        queries
+      );
+
+      console.log(
+        `Found ${response.documents.length} wallpapers for category ${categoryId}`
+      );
+
+      return {
+        documents: response.documents,
+        pagination: {
+          total: response.total,
+          nextCursor:
+            response.documents.length > 0
+              ? response.documents[response.documents.length - 1].$id
+              : null,
+        },
+      };
     } catch (error) {
       console.error(
         `Error fetching wallpapers for category ${categoryId}:`,

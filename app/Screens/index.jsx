@@ -87,12 +87,24 @@ const Screens = () => {
           ? decodeURIComponent(params.name)
           : "Wallpaper";
         const id = params.id; // This will be useful if coming from search or category
+        const categoryId = params.categoryId; // Extract category ID if present
 
-        // If we have an ID, we can position exactly at that wallpaper
-        // Otherwise, we'll use the imageUrl to find the closest match
+        console.log("Opening wallpaper:", { imageUrl, name, id, categoryId });
 
-        // Fetch initial batch of wallpapers
-        const response = await wallpaperService.getWallpapers(20);
+        let response;
+
+        // If we have a categoryId, fetch only wallpapers from that category
+        if (categoryId) {
+          console.log(`Loading wallpapers from category: ${categoryId}`);
+          response = await wallpaperService.getWallpapersByCategory(
+            categoryId,
+            20
+          );
+        } else {
+          // Otherwise fetch all wallpapers
+          console.log("Loading all wallpapers");
+          response = await wallpaperService.getWallpapers(20);
+        }
 
         if (response && response.documents) {
           console.log(`Loaded ${response.documents.length} wallpapers`);
@@ -110,14 +122,24 @@ const Screens = () => {
           if (id) {
             const index = response.documents.findIndex((w) => w.$id === id);
             if (index !== -1) {
+              console.log(`Found wallpaper at index ${index}`);
               setCurrentIndex(index);
+            } else {
+              console.log(
+                `Wallpaper with ID ${id} not found in the loaded wallpapers`
+              );
             }
           } else if (imageUrl) {
             const index = response.documents.findIndex(
               (w) => w.imageUrl === imageUrl
             );
             if (index !== -1) {
+              console.log(`Found wallpaper at index ${index}`);
               setCurrentIndex(index);
+            } else {
+              console.log(
+                `Wallpaper with URL ${imageUrl} not found in the loaded wallpapers`
+              );
             }
           }
         }
@@ -130,7 +152,7 @@ const Screens = () => {
     };
 
     loadInitialWallpaper();
-  }, [params.imageUrl, params.id]);
+  }, [params.imageUrl, params.id, params.categoryId]); // Add categoryId as dependency
 
   // Load more wallpapers when approaching the end
   const loadMoreWallpapers = async () => {
@@ -140,7 +162,22 @@ const Screens = () => {
       setLoadingMore(true);
       console.log("Loading more wallpapers, cursor:", nextCursor);
 
-      const response = await wallpaperService.getWallpapers(20, nextCursor);
+      const categoryId = params.categoryId; // Extract category ID if present
+      let response;
+
+      // If we have a categoryId, fetch more wallpapers from that category
+      if (categoryId) {
+        console.log(`Loading more wallpapers from category: ${categoryId}`);
+        response = await wallpaperService.getWallpapersByCategory(
+          categoryId,
+          20,
+          nextCursor
+        );
+      } else {
+        // Otherwise fetch all wallpapers
+        console.log("Loading more from all wallpapers");
+        response = await wallpaperService.getWallpapers(20, nextCursor);
+      }
 
       if (response && response.documents && response.documents.length > 0) {
         setWallpapers((prev) => [...prev, ...response.documents]);
@@ -335,31 +372,55 @@ const Screens = () => {
           <View style={styles.empty} />
         </View>
 
-        {/* Controls Toolbar */}
-        <View style={styles.toolbar}>
-          <DownloadButton
-            imageUrl={item.imageUrl}
-            wallpaperName={item.title}
-            adRequestOptions={getAdRequestOptions()}
-          />
-          <TouchableOpacity onPress={() => toggleFavorite(item)}>
+        {/* Vertical Controls Toolbar (Instagram style) */}
+        <View style={styles.verticalToolbar}>
+          <TouchableOpacity
+            style={styles.toolbarButton}
+            onPress={() => toggleFavorite(item)}
+          >
             <AntDesign
               name={isFavorite ? "heart" : "hearto"}
-              size={24}
+              size={26}
               color={isFavorite ? "#ff4757" : "white"}
             />
+            <Text style={styles.toolbarButtonLabel}>
+              {isFavorite ? "Liked" : "Like"}
+            </Text>
           </TouchableOpacity>
-          {/* <TouchableOpacity onPress={() => setWallpaper(item.imageUrl)}>
-            <Ionicons name="settings-outline" size={24} color="white" />
+
+          {/* <TouchableOpacity
+            style={styles.toolbarButton}
+            onPress={() => setWallpaper(item.imageUrl)}
+          >
+            <Ionicons name="phone-portrait-outline" size={26} color="white" />
+            <Text style={styles.toolbarButtonLabel}>Apply</Text>
           </TouchableOpacity> */}
+
+          <View style={styles.toolbarButton}>
+            <DownloadButton
+              imageUrl={item.imageUrl}
+              wallpaperName={item.title}
+              adRequestOptions={getAdRequestOptions()}
+              vertical={true} // Add this prop to support vertical layout
+            />
+          </View>
+
+          <TouchableOpacity
+            style={styles.toolbarButton}
+            onPress={() => {
+              // Share functionality
+              Alert.alert("Share", "Sharing functionality coming soon!");
+            }}
+          >
+            <Ionicons name="share-social-outline" size={26} color="white" />
+            <Text style={styles.toolbarButtonLabel}>Share</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Navigation Hints */}
+        {/* Navigation Hints at bottom center */}
         <View style={styles.navigationHints}>
-          <Text style={styles.hintText}>Swipe for more wallpapers</Text>
-          <View style={styles.arrows}>
-            <Ionicons name="chevron-up" size={20} color="white" />
-          </View>
+          <Ionicons name="chevron-up" size={24} color="white" />
+          <Text style={styles.hintText}>Swipe up for next wallpaper</Text>
         </View>
       </View>
     );
@@ -495,20 +556,50 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
   },
-  toolbar: {
-    position: "absolute",
-    bottom: 50,
-    width: "70%",
-    height: 50,
-    alignSelf: "center",
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
+  // New vertical toolbar styles (Instagram Reels style)
+  verticalToolbar: {
+    //backgroundColor: "rgba(0,0,0,0.7)",
     borderRadius: 20,
-    overflow: "hidden",
-    backgroundColor: "rgba(0,0,0,0.7)",
+    position: "absolute",
+    right: 10,
+    bottom: 70,
+    alignItems: "center",
+    zIndex: 10,
+    paddingVertical: 20,
+    paddingHorizontal: 5,
+  },
+  toolbarButton: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  toolbarButtonLabel: {
+    color: "white",
+    fontSize: 12,
+    marginTop: 5,
+    fontFamily: "Outfit-Medium",
+    textShadowColor: "rgba(0,0,0,0.75)",
+    textShadowOffset: { width: 0.5, height: 0.5 },
+    textShadowRadius: 2,
+  },
+  // Updated navigation hints for bottom center
+  navigationHints: {
+    position: "absolute",
+    bottom: 30,
+    width: "100%",
+    alignItems: "center",
     zIndex: 10,
   },
+  hintText: {
+    color: "white",
+    fontSize: 14,
+    fontFamily: "Outfit-Regular",
+    marginTop: 5,
+    opacity: 0.8,
+    textShadowColor: "rgba(0,0,0,0.75)",
+    textShadowOffset: { width: 0.5, height: 0.5 },
+    textShadowRadius: 2,
+  },
+  // Keep other existing styles...
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -549,24 +640,5 @@ const styles = StyleSheet.create({
     color: "white",
     marginTop: 10,
     fontFamily: "Outfit-Regular",
-  },
-  navigationHints: {
-    position: "absolute",
-    bottom: 120,
-    width: "100%",
-    alignItems: "center",
-  },
-  hintText: {
-    color: "white",
-    fontSize: 12,
-    fontFamily: "Outfit-Regular",
-    textShadowColor: "rgba(0,0,0,0.75)",
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 3,
-    marginBottom: 5,
-    opacity: 0.8,
-  },
-  arrows: {
-    opacity: 0.8,
   },
 });
