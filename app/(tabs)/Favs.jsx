@@ -77,8 +77,14 @@ const Favs = () => {
         renderItem={({ item }) => (
           <View style={{ margin: CARD_MARGIN }}>
             <ImageCard
-              imageUrl={item.imageUrl} // Already using imageUrl which is good
-              wallpaperName={item.name} // Using name field which is saved in AsyncStorage
+              imageUrl={item.imageUrl}
+              wallpaperName={item.name}
+              id={item.id} // Make sure to pass the id if available
+              // Pass special params to indicate this is from favorites
+              params={{
+                fromFavorites: true,
+                favoritesList: favorites, // Pass the entire favorites list
+              }}
               style={styles.card}
             />
           </View>
@@ -86,7 +92,6 @@ const Favs = () => {
         numColumns={2}
         contentContainerStyle={[
           styles.listContainer,
-          // Add this to make the empty state message centered when list is empty
           favorites.length === 0 && { flex: 1, justifyContent: "center" },
         ]}
         ListEmptyComponent={renderEmptyList}

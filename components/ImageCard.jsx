@@ -22,11 +22,11 @@ const ImageCard = ({ imageUrl, wallpaperName, style, id, params }) => {
 
   const handleNavigate = () => {
     const encodedUrl = encodeURIComponent(imageUrl);
-    const encodedName = encodeURIComponent(wallpaperName || "wallpaper"); // Fallback name if none provided
+    const encodedName = encodeURIComponent(wallpaperName || "wallpaper");
 
     console.log("Navigating with name:", wallpaperName);
 
-    // Create navigation params
+    // Create navigation parameters
     const navigationParams = {
       imageUrl: encodedUrl,
       name: encodedName,
@@ -40,6 +40,32 @@ const ImageCard = ({ imageUrl, wallpaperName, style, id, params }) => {
     // Add categoryId if it exists in params
     if (params && params.categoryId) {
       navigationParams.categoryId = params.categoryId;
+    }
+
+    // Add favorites context if coming from favorites
+    if (params && params.fromFavorites) {
+      navigationParams.fromFavorites = "true";
+
+      // Pass the favorites list if available
+      if (params.favoritesList) {
+        // Since router params need to be strings, we'll stringify the array
+        // This will have limitations on size, but should work for typical favorite counts
+        try {
+          // Use a more compact representation just with required fields
+          const compactList = Array.isArray(params.favoritesList)
+            ? params.favoritesList.map((item) => ({
+                id: item.id || item.$id,
+                imageUrl: item.imageUrl,
+                title: item.title || item.name,
+                name: item.name || item.title,
+              }))
+            : params.favoritesList;
+
+          navigationParams.favoritesList = JSON.stringify(compactList);
+        } catch (e) {
+          console.error("Error stringifying favorites list:", e);
+        }
+      }
     }
 
     router.push({

@@ -86,11 +86,65 @@ const Screens = () => {
         const name = params.name
           ? decodeURIComponent(params.name)
           : "Wallpaper";
-        const id = params.id; // This will be useful if coming from search or category
-        const categoryId = params.categoryId; // Extract category ID if present
+        const id = params.id;
+        const categoryId = params.categoryId;
+        const fromFavorites = params.fromFavorites === "true";
+        const favoritesListJSON = params.favoritesList; // This will be a JSON string
 
-        console.log("Opening wallpaper:", { imageUrl, name, id, categoryId });
+        console.log("Opening wallpaper:", {
+          imageUrl,
+          name,
+          id,
+          categoryId,
+          fromFavorites,
+        });
 
+        // If coming from favorites, use the provided favorites list
+        if (fromFavorites && favoritesListJSON) {
+          try {
+            // First try to parse if it's already a JSON string
+            let favoritesList;
+            try {
+              // If it's passed as a JSON string (which happens through URL params)
+              favoritesList = JSON.parse(favoritesListJSON);
+            } catch (e) {
+              // If it's already an object (direct navigation within JS)
+              favoritesList = favoritesListJSON;
+            }
+
+            console.log(
+              "Using favorites list for wallpapers:",
+              Array.isArray(favoritesList)
+                ? favoritesList.length
+                : "Invalid favorites"
+            );
+
+            // Use favorites as our wallpapers source
+            if (Array.isArray(favoritesList) && favoritesList.length > 0) {
+              setWallpapers(favoritesList);
+              setHasMore(false); // No pagination for favorites
+
+              // Find the index of the current wallpaper
+              const index = favoritesList.findIndex(
+                (w) =>
+                  (id && w.id === id) || (imageUrl && w.imageUrl === imageUrl)
+              );
+
+              if (index !== -1) {
+                console.log(`Found wallpaper at index ${index} in favorites`);
+                setCurrentIndex(index);
+              }
+
+              setLoading(false);
+              return; // Exit early, we've loaded from favorites
+            }
+          } catch (error) {
+            console.error("Error parsing favorites list:", error);
+            // Fall back to normal loading if favorites parsing fails
+          }
+        }
+
+        // If not from favorites, or if favorites loading failed, proceed with normal loading
         let response;
 
         // If we have a categoryId, fetch only wallpapers from that category
@@ -152,17 +206,30 @@ const Screens = () => {
     };
 
     loadInitialWallpaper();
-  }, [params.imageUrl, params.id, params.categoryId]); // Add categoryId as dependency
+  }, [
+    params.imageUrl,
+    params.id,
+    params.categoryId,
+    params.fromFavorites,
+    params.favoritesList,
+  ]);
 
   // Load more wallpapers when approaching the end
   const loadMoreWallpapers = async () => {
     if (!hasMore || loadingMore) return;
 
+    // Check if we're in favorites mode - if so, no more loading needed
+    if (params.fromFavorites === "true") {
+      console.log("In favorites mode - no more wallpapers to load");
+      setHasMore(false);
+      return;
+    }
+
     try {
       setLoadingMore(true);
       console.log("Loading more wallpapers, cursor:", nextCursor);
 
-      const categoryId = params.categoryId; // Extract category ID if present
+      const categoryId = params.categoryId;
       let response;
 
       // If we have a categoryId, fetch more wallpapers from that category
@@ -346,12 +413,25 @@ const Screens = () => {
 
   // Render wallpaper item
   const renderWallpaperItem = ({ item }) => {
-    const isFavorite = isWallpaperFavorite(item.imageUrl);
+    // Check if the item is from favorites or from the database
+    const isFromFavorites = params.fromFavorites === "true";
+
+    // Get the image URL
+    const imageUrl = item.imageUrl;
+
+    // Get the title - handle both database and favorites formats
+    const title = isFromFavorites ? item.name || item.title : item.title;
+
+    // Get the ID - handle both database and favorites formats
+    const itemId = isFromFavorites ? item.id || item.$id : item.$id;
+
+    // Check if it's in favorites
+    const isFavorite = isWallpaperFavorite(imageUrl);
 
     return (
       <View style={styles.slideContainer}>
         <Image
-          source={{ uri: item.imageUrl }}
+          source={{ uri: imageUrl }}
           style={styles.image}
           resizeMode="cover"
         />
@@ -366,7 +446,7 @@ const Screens = () => {
           </TouchableOpacity>
 
           <Text numberOfLines={1} style={styles.wallpaperTitle}>
-            {item.title}
+            {title}
           </Text>
 
           <View style={styles.empty} />
@@ -384,7 +464,7 @@ const Screens = () => {
               color={isFavorite ? "#ff4757" : "white"}
             />
             <Text style={styles.toolbarButtonLabel}>
-              {isFavorite ? "Liked" : "Like"}
+              {isFavorite ? "Saved" : "Save"}
             </Text>
           </TouchableOpacity>
 
