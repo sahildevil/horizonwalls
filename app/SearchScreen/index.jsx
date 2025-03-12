@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   StyleSheet,
   Text,
@@ -13,10 +13,16 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../providers/ThemeProvider";
+import {
+  databases,
+  DATABASE_ID,
+  WALLPAPERS_COLLECTION_ID,
+  Query,
+} from "../../services/appwrite";
+import debounce from "lodash.debounce";
 
 const { width } = Dimensions.get("window");
-const API_URL = process.env.EXPO_PUBLIC_API_URL + "/wallpapers";
-//const API_URL = "http://192.168.1.5:8000/api/wallpapers";
+
 const SearchScreen = () => {
   const { isDarkTheme, currentTheme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
@@ -25,52 +31,77 @@ const SearchScreen = () => {
   const [error, setError] = useState(null);
   const router = useRouter();
 
-  const handleSearch = async (query) => {
+  // Create a debounced version of the search function
+  const debouncedSearch = useCallback(
+    debounce(async (query) => {
+      if (!query.trim()) {
+        setWallpapers([]);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        console.log("Searching for:", query);
+        console.log(
+          "Using database:",
+          DATABASE_ID,
+          "collection:",
+          WALLPAPERS_COLLECTION_ID
+        );
+
+        // Use Appwrite SDK to search
+        const response = await databases.listDocuments(
+          DATABASE_ID,
+          WALLPAPERS_COLLECTION_ID,
+          [
+            Query.search("title", query.trim()),
+            Query.limit(20),
+            Query.orderDesc("$createdAt"),
+          ]
+        );
+
+        console.log("Search response:", response);
+
+        if (response && response.documents) {
+          console.log(
+            `Found ${response.documents.length} results for "${query}"`
+          );
+          setWallpapers(response.documents);
+        } else {
+          console.log("No results found or invalid response");
+          setWallpapers([]);
+        }
+      } catch (error) {
+        console.error("Search error:", error);
+        setError(error.message || "Search failed. Please try again.");
+        setWallpapers([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 500), // 500ms debounce delay
+    [] // Empty dependencies to ensure the debounced function is created once
+  );
+
+  const handleSearch = (query) => {
     setSearchQuery(query);
 
-    // Clear results if search is empty
+    // Clear results immediately if empty
     if (!query.trim()) {
       setWallpapers([]);
-      setLoading(false);
       return;
     }
 
+    // Show loading state
     setLoading(true);
-    setError(null);
 
-    try {
-      // Encode the search query and ensure it's trimmed
-      const encodedQuery = encodeURIComponent(query.trim());
-      const response = await fetch(`${API_URL}?search=${encodedQuery}`, {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      //console.log("Search results:", data); // Debug log
-
-      // Appwrite returns an array directly instead of {success, wallpapers} format
-      if (data.documents && Array.isArray(data.documents)) {
-        setWallpapers(data.documents); // Use `documents` array
-      } else {
-        throw new Error("Invalid response format");
-      }
-    } catch (error) {
-      console.error("Search error:", error);
-      setError(error.message);
-      setWallpapers([]);
-    } finally {
-      setLoading(false);
-    }
+    // Execute the debounced search
+    debouncedSearch(query);
   };
 
+  // In your wallpaper item rendering:
   const renderWallpaperItem = ({ item }) => (
     <TouchableOpacity
       style={[
@@ -83,16 +114,34 @@ const SearchScreen = () => {
           params: {
             imageUrl: encodeURIComponent(item.imageUrl),
             name: encodeURIComponent(item.title),
+            id: item.$id, // Make sure to pass the ID
           },
         });
       }}
     >
-      <Image source={{ uri: item.imageUrl }} style={styles.wallpaperImage} />
+      <Image
+        source={{ uri: item.imageUrl }}
+        style={styles.wallpaperImage}
+        // Add a placeholder image
+      />
       <Text style={styles.wallpaperName} numberOfLines={1}>
         {item.title}
       </Text>
     </TouchableOpacity>
   );
+
+  // Display count badge if results are found
+  const renderResultCount = () => {
+    if (!searchQuery || loading || error || wallpapers.length === 0)
+      return null;
+
+    return (
+      <Text style={[styles.resultCount, { color: currentTheme.secondary }]}>
+        {wallpapers.length} {wallpapers.length === 1 ? "result" : "results"}{" "}
+        found
+      </Text>
+    );
+  };
 
   return (
     <View
@@ -113,30 +162,50 @@ const SearchScreen = () => {
         </TouchableOpacity>
         <Text style={[styles.title, { color: currentTheme.text }]}>Search</Text>
       </View>
-      <TextInput
-        style={[
-          styles.searchInput,
-          {
-            backgroundColor: currentTheme.cardBackground,
-            color: currentTheme.text,
-          },
-          searchQuery && { borderColor: currentTheme.primary, borderWidth: 2 },
-        ]}
-        placeholder="Search wallpapers by name..."
-        value={searchQuery}
-        onChangeText={handleSearch}
-        placeholderTextColor={currentTheme.secondary}
-      />
+
+      <View style={styles.searchContainer}>
+        <Ionicons
+          name="search-outline"
+          size={20}
+          color={currentTheme.secondary}
+          style={styles.searchIcon}
+        />
+        <TextInput
+          style={[
+            styles.searchInput,
+            {
+              backgroundColor: currentTheme.cardBackground,
+              color: currentTheme.text,
+              borderColor: searchQuery ? currentTheme.primary : "#ddd",
+            },
+          ]}
+          placeholder="Search wallpapers by name..."
+          value={searchQuery}
+          onChangeText={handleSearch}
+          placeholderTextColor={currentTheme.secondary}
+          autoFocus={true}
+          returnKeyType="search"
+          clearButtonMode="while-editing"
+        />
+      </View>
+
+      {renderResultCount()}
 
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color='tomato' />
+          <ActivityIndicator size="large" color="tomato" />
         </View>
       ) : error ? (
         <View style={styles.centerContainer}>
           <Text style={[styles.errorText, { color: currentTheme.text }]}>
             {error}
           </Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => handleSearch(searchQuery)}
+          >
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
         </View>
       ) : wallpapers.length === 0 ? (
         <View style={styles.centerContainer}>
@@ -154,6 +223,7 @@ const SearchScreen = () => {
           numColumns={2}
           contentContainerStyle={styles.wallpaperList}
           showsVerticalScrollIndicator={false}
+          initialNumToRender={6}
         />
       )}
     </View>
@@ -186,18 +256,35 @@ const styles = StyleSheet.create({
     fontSize: 28,
     flex: 1,
   },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  searchIcon: {
+    position: "absolute",
+    zIndex: 1,
+    left: 15,
+  },
   searchInput: {
     height: 50,
-    borderColor: "#ddd",
     borderWidth: 1,
     borderRadius: 25,
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    paddingHorizontal: 45,
+    paddingVertical: 12,
     fontSize: 16,
     fontFamily: "Outfit-Regular",
+    flex: 1,
+  },
+  resultCount: {
+    marginBottom: 10,
+    fontSize: 14,
+    fontFamily: "Outfit-Medium",
+    textAlign: "center",
   },
   wallpaperList: {
     paddingBottom: 20,
+    alignItems: "center",
   },
   wallpaperItem: {
     width: width / 2 - 24,
@@ -219,6 +306,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     resizeMode: "cover",
+    backgroundColor: "#e0e0e0", // Placeholder color while loading
   },
   wallpaperName: {
     position: "absolute",
@@ -241,10 +329,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
     fontFamily: "Outfit-Regular",
+    marginBottom: 15,
   },
   noResultsText: {
     fontSize: 16,
     textAlign: "center",
     fontFamily: "Outfit-Regular",
+  },
+  retryButton: {
+    backgroundColor: "tomato",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  retryText: {
+    color: "white",
+    fontFamily: "Outfit-Medium",
   },
 });

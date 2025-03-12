@@ -7,17 +7,20 @@ const client = new Client();
 // Replace with your Appwrite endpoint and project ID
 client
   .setEndpoint("https://cloud.appwrite.io/v1") // Replace with your Appwrite endpoint
-  .setProject("67c14b690038af18eaa3"); // Replace with your project ID
+  .setProject(process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID); // Replace with your project ID
 
 // Initialize Appwrite services
 export const account = new Account(client);
 export const databases = new Databases(client);
 export const storage = new Storage(client);
 
-// Use the same IDs as your server
-const DATABASE_ID = process.env.DATABASE_ID;
-const WALLPAPERS_COLLECTION_ID = process.env.WALLPAPERS_COLLECTION_ID;
-const CATEGORIES_COLLECTION_ID = process.env.CATEGORIES_COLLECTION_ID;
+// Use the same IDs as your server - make sure these are strings
+export const DATABASE_ID = process.env.EXPO_PUBLIC_DATABASE_ID;
+export const WALLPAPERS_COLLECTION_ID = process.env.EXPO_PUBLIC_WALLPAPERS_COLLECTION_ID;
+export const CATEGORIES_COLLECTION_ID = process.env.EXPO_PUBLIC_CATEGORIES_COLLECTION_ID;
+
+// Export Query for use in components
+export { Query };
 
 // Service functions for wallpapers
 export const wallpaperService = {
@@ -29,7 +32,7 @@ export const wallpaperService = {
     searchQuery = null
   ) => {
     try {
-      let queries = [Query.limit(limit)];
+      let queries = [Query.limit(limit), Query.orderDesc("$createdAt")];
 
       // Add cursor for pagination if provided
       if (cursor) {
@@ -46,13 +49,18 @@ export const wallpaperService = {
         queries.push(Query.search("title", searchQuery));
       }
 
+      console.log("Executing wallpaper query with:", {
+        DATABASE_ID,
+        WALLPAPERS_COLLECTION_ID,
+        queries,
+      });
+
       const response = await databases.listDocuments(
         DATABASE_ID,
         WALLPAPERS_COLLECTION_ID,
         queries
       );
 
-      // Format response similar to your API for compatibility
       return {
         documents: response.documents,
         pagination: {
@@ -98,11 +106,23 @@ export const categoryService = {
   // Get all categories
   getCategories: async () => {
     try {
+      console.log(
+        "Fetching categories from DB:",
+        DATABASE_ID,
+        "Collection:",
+        CATEGORIES_COLLECTION_ID
+      );
+
+      // Add debug query to check if anything is there
       const response = await databases.listDocuments(
         DATABASE_ID,
         CATEGORIES_COLLECTION_ID,
         [Query.limit(100)]
       );
+
+      console.log("Raw Appwrite categories response:", response);
+      console.log("Total categories found:", response.total);
+
       return response.documents;
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -125,14 +145,16 @@ export const categoryService = {
   },
 };
 
+// Make sure we're exporting everything needed
 export default {
   client,
   account,
   databases,
   storage,
-  wallpaperService,
-  categoryService,
+  Query,
   DATABASE_ID,
   WALLPAPERS_COLLECTION_ID,
   CATEGORIES_COLLECTION_ID,
+  wallpaperService,
+  categoryService,
 };

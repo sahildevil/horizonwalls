@@ -14,7 +14,7 @@ import { useTheme } from "../providers/ThemeProvider";
 const { width } = Dimensions.get("window");
 const cardWidth = (width - 30) / 2;
 
-const ImageCard = ({ imageUrl, wallpaperName, style }) => {
+const ImageCard = ({ imageUrl, wallpaperName, style, id }) => {
   const router = useRouter();
   const { currentTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
@@ -31,6 +31,8 @@ const ImageCard = ({ imageUrl, wallpaperName, style }) => {
       params: {
         imageUrl: encodedUrl,
         name: encodedName,
+        // Only pass id if it exists
+        ...(id && { id }),
       },
     });
   };
@@ -51,7 +53,7 @@ const ImageCard = ({ imageUrl, wallpaperName, style }) => {
     >
       {isLoading && (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color='tomato' />
+          <ActivityIndicator size="small" color="tomato" />
         </View>
       )}
       <Image

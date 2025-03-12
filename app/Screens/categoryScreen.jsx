@@ -14,8 +14,13 @@ import ImageCard from "../../components/ImageCard";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useTheme } from "../../providers/ThemeProvider";
+import {
+  databases,
+  DATABASE_ID,
+  WALLPAPERS_COLLECTION_ID,
+} from "../../services/appwrite";
+import { Query } from "appwrite"; // Import directly from appwrite package
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL + "/wallpapers";
 const { width } = Dimensions.get("window");
 const CARD_MARGIN = 8;
 const CONTAINER_PADDING = 16;
@@ -28,7 +33,15 @@ const CARD_WIDTH =
 const CARD_HEIGHT = (CARD_WIDTH * 16) / 9;
 
 const CategoryDetails = () => {
-  const { id, name } = useLocalSearchParams();
+  // Use categoryId instead of id to match your Appwrite field name
+  const params = useLocalSearchParams();
+  const categoryId = params.categoryId || params.id;
+  const name = params.categoryName
+    ? decodeURIComponent(params.categoryName)
+    : params.name;
+
+  console.log(`Loading category: ID=${categoryId}, Name=${name}`);
+
   const { isDarkTheme, currentTheme } = useTheme();
   const [wallpapers, setWallpapers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,6 +52,13 @@ const CategoryDetails = () => {
   const [nextCursor, setNextCursor] = useState(null);
   const [wallpaperIds, setWallpaperIds] = useState(new Set());
   const [isEndReached, setIsEndReached] = useState(false);
+
+  // Verify if the DATABASE_ID and WALLPAPERS_COLLECTION_ID are loaded
+  console.log("Database and Collection IDs:", {
+    DATABASE_ID,
+    WALLPAPERS_COLLECTION_ID,
+    categoryId,
+  });
 
   const isFetchingRef = useRef(false);
   // Use refs to avoid dependency cycles
@@ -63,56 +83,67 @@ const CategoryDetails = () => {
       isFetchingRef.current = true;
 
       try {
+        // Verify that database and collection IDs are defined
+        if (!DATABASE_ID || !WALLPAPERS_COLLECTION_ID) {
+          throw new Error("Database ID or Collection ID is undefined");
+        }
+
         if (!hasMore && !shouldRefresh) {
-          console.log("No more wallpapers to fetch for category:", id);
+          console.log("No more wallpapers to fetch for category:", categoryId);
           setLoadingMore(false);
           return;
         }
 
-        // Construct URL based on whether this is initial or subsequent fetch
-        let url = `${API_URL}?limit=20&category=${id}`;
+        console.log(
+          `Fetching wallpapers for category ${categoryId}, refresh: ${shouldRefresh}, cursor: ${
+            nextCursor || "initial"
+          }`
+        );
+        console.log(
+          "Using database:",
+          DATABASE_ID,
+          "and collection:",
+          WALLPAPERS_COLLECTION_ID
+        );
+
+        // Build Appwrite query
+        let queries = [
+          Query.equal("categoryId", categoryId), // Find wallpapers with matching categoryId
+          Query.limit(20), // Limit to 20 results per fetch
+          Query.orderDesc("$createdAt"), // Sort by newest first
+        ];
+
+        // Add cursor for pagination if not refreshing
         if (!shouldRefresh && nextCursor) {
-          url += `&cursor=${nextCursor}`;
+          queries.push(Query.cursorAfter(nextCursor));
         }
 
-        // Add a random cache buster to prevent caching issues
-        url += `&_=${new Date().getTime()}`;
+        // Use Appwrite SDK to fetch wallpapers with explicit string parameters
+        // The issue might be that the constants aren't being passed correctly as strings
+        const response = await databases.listDocuments(
+          DATABASE_ID, // Make sure this is a string
+          WALLPAPERS_COLLECTION_ID, // Make sure this is a string
+          queries
+        );
 
-        console.log("Fetching from URL:", url);
+        //console.log("Appwrite response:", response);
 
-        const response = await fetch(url);
+        const data = response.documents || [];
+        const total = response.total || 0;
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        console.log(`Found ${data.length} wallpapers out of ${total} total`);
 
-        const responseData = await response.json();
-        console.log("Raw API response for category:", responseData);
+        // Set pagination info
+        const lastDocument = data.length > 0 ? data[data.length - 1] : null;
+        const hasMoreData = data.length >= 20 && data.length < total;
 
-        const data = responseData.documents || responseData;
-
-        // Check if the API returns pagination info
-        const paginationInfo = responseData.pagination;
-
-        console.log("Fetched category wallpapers count:", data.length);
-        console.log("Pagination info:", paginationInfo);
-
-        // If server provides pagination info, use it
-        if (paginationInfo) {
-          const cursorExists = !!paginationInfo.nextCursor;
-          console.log(
-            `Setting hasMore to ${cursorExists} based on nextCursor existence`
-          );
-          setHasMore(cursorExists);
-          setNextCursor(paginationInfo.nextCursor);
-        } else {
-          // Fallback to checking length
-          const newHasMore = data.length >= 20;
-          console.log(
-            `Setting hasMore to ${newHasMore} based on data length check`
-          );
-          setHasMore(newHasMore);
-        }
+        console.log(
+          `Setting hasMore: ${hasMoreData}, nextCursor: ${
+            lastDocument?.$id || "null"
+          }`
+        );
+        setHasMore(hasMoreData);
+        setNextCursor(lastDocument?.$id || null);
 
         // Handle empty response
         if (data.length === 0) {
@@ -179,7 +210,32 @@ const CategoryDetails = () => {
         }
       } catch (error) {
         console.error("Error fetching category wallpapers:", error);
-        setError(error.message);
+        setError(error.message || "Failed to fetch wallpapers");
+
+        // Try a fallback approach if possible
+        if (error.message.includes("Missing required parameter")) {
+          console.log("Attempting fallback approach with hardcoded IDs");
+          try {
+            // Attempt with hardcoded values as a last resort
+            const response = await databases.listDocuments(
+              "67c1554d00000d1e7cb7", // Your DATABASE_ID hardcoded
+              "67c1589e0023462338f0", // Your WALLPAPERS_COLLECTION_ID hardcoded
+              [Query.equal("categoryId", categoryId), Query.limit(20)]
+            );
+
+            if (response && response.documents) {
+              console.log(
+                "Fallback succeeded! Found",
+                response.documents.length,
+                "wallpapers"
+              );
+              setWallpapers(response.documents);
+              setError(null);
+            }
+          } catch (fallbackError) {
+            console.error("Fallback also failed:", fallbackError);
+          }
+        }
       } finally {
         setLoading(false);
         setLoadingMore(false);
@@ -187,15 +243,22 @@ const CategoryDetails = () => {
         isFetchingRef.current = false;
       }
     },
-    [id, hasMore, nextCursor]
-  ); // Removed wallpaperIds and wallpapers.length from dependencies
+    [categoryId, hasMore, nextCursor]
+  );
 
-  // Initial fetch - use a separate effect with no dependencies to run only once
+  // Rest of your component stays the same
+
+  // Initial fetch - use a separate effect with categoryId dependency to run when changed
   useEffect(() => {
     let isMounted = true;
 
     const loadInitialData = async () => {
       if (isMounted) {
+        setLoading(true);
+        setWallpapers([]);
+        setWallpaperIds(new Set());
+        setNextCursor(null);
+        setHasMore(true);
         await fetchCategoryWallpapers(true);
       }
     };
@@ -205,7 +268,7 @@ const CategoryDetails = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [categoryId]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -289,7 +352,7 @@ const CategoryDetails = () => {
     if (!loadingMore) return null;
     return (
       <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" color='tomato' />
+        <ActivityIndicator size="small" color="tomato" />
       </View>
     );
   };
@@ -310,7 +373,7 @@ const CategoryDetails = () => {
       <View
         style={[styles.loader, { backgroundColor: currentTheme.background }]}
       >
-        <ActivityIndicator size="large" color='tomato' />
+        <ActivityIndicator size="large" color="tomato" />
       </View>
     );
   }
@@ -326,6 +389,12 @@ const CategoryDetails = () => {
         <Text style={[styles.errorText, { color: currentTheme.text }]}>
           Error loading wallpapers: {error}
         </Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={() => fetchCategoryWallpapers(true)}
+        >
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -334,15 +403,11 @@ const CategoryDetails = () => {
     <View
       style={[styles.container, { backgroundColor: currentTheme.background }]}
     >
-      <View
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          marginLeft: 10,
-        }}
-      >
-        <TouchableOpacity onPress={() => router.back()}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
           <Ionicons
             name="chevron-back-outline"
             size={24}
@@ -358,6 +423,9 @@ const CategoryDetails = () => {
           <Text style={[styles.emptyText, { color: currentTheme.text }]}>
             No wallpapers found in this category
           </Text>
+          <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
+            <Text style={styles.retryText}>Refresh</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -382,8 +450,8 @@ const CategoryDetails = () => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={["#4285F4"]}
-              tintColor={currentTheme.primary}
+              colors={["tomato"]}
+              tintColor={currentTheme.text}
             />
           }
           onEndReached={onEndReachedHandler}
@@ -410,11 +478,20 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 60,
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+    paddingHorizontal: 16,
+  },
+  backButton: {
+    padding: 8,
+  },
   title: {
     fontSize: 28,
     fontFamily: "Outfit-Bold",
-    marginHorizontal: 20,
-    marginBottom: 0,
+    marginLeft: 8,
+    flex: 1,
   },
   listContainer: {
     paddingHorizontal: CONTAINER_PADDING,
@@ -435,6 +512,17 @@ const styles = StyleSheet.create({
   errorText: {
     textAlign: "center",
     fontFamily: "Outfit-Regular",
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: "tomato",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  retryText: {
+    color: "white",
+    fontFamily: "Outfit-Medium",
   },
   card: {
     width: CARD_WIDTH,
@@ -469,6 +557,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
     fontFamily: "Outfit-Regular",
+    marginBottom: 20,
   },
 });
 

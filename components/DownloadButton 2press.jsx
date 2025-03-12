@@ -45,9 +45,9 @@ import React, { useEffect, useState, useCallback } from "react";
     const adUnitId = "ca-app-pub-4677981033286236/7236677981";
 
     useEffect(() => {
-      console.log("Current environment:", __DEV__ ? "Development" : "Production");
-      console.log("Platform:", Platform.OS);
-      console.log("Using ad unit ID:", adUnitId);
+      //console.log("Current environment:", __DEV__ ? "Development" : "Production");
+      //console.log("Platform:", Platform.OS);
+      //console.log("Using ad unit ID:", adUnitId);
     }, []);
 
     const createAndLoadAd = useCallback(() => {

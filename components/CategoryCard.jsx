@@ -1,59 +1,49 @@
+import React from "react";
 import {
   StyleSheet,
   Text,
+  View,
+  Image,
   TouchableOpacity,
   ImageBackground,
-  Dimensions,
-  View,
 } from "react-native";
-import React, { useState } from "react";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 
-const { width } = Dimensions.get("window");
-const cardWidth = width - 30;
-const cardHeight = 180;
-
-const CategoryCard = ({ name, imageUrl, id }) => {
+const CategoryCard = ({ category, style }) => {
   const router = useRouter();
-  const [imageError, setImageError] = useState(false);
+
+  // Handle both data formats: direct category object or nested properties
+  const name = category?.name || "Category";
+  const imageUrl = category?.imageUrl || "https://via.placeholder.com/150";
+  const id = category?.$id || "unknown";
+
+  // Log for debugging
+  //console.log("CategoryCard:", { id, name, imageUrl });
 
   const handlePress = () => {
     router.push({
       pathname: "/Screens/categoryScreen",
-      params: { id, name },
+      params: {
+        categoryId: id,
+        categoryName: encodeURIComponent(name),
+      },
     });
   };
 
-  console.log("CategoryCard props:", { name, imageUrl, id }); // Debug log
-
   return (
-    <TouchableOpacity
-      style={styles.container}
-      onPress={handlePress}
-      activeOpacity={0.9}
-    >
+    <TouchableOpacity style={[styles.container, style]} onPress={handlePress}>
       <ImageBackground
         source={{ uri: imageUrl }}
-        style={styles.imageBackground}
+        style={styles.image}
         imageStyle={styles.imageStyle}
-        onError={(e) => {
-          console.error("Image loading error:", e.nativeEvent.error);
-          setImageError(true);
-        }}
       >
-        {imageError ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>Failed to load image</Text>
-          </View>
-        ) : (
-          <LinearGradient
-            colors={["transparent", "rgba(0,0,0,0.8)"]}
-            style={styles.gradient}
-          >
-            <Text style={styles.name}>{name}</Text>
-          </LinearGradient>
-        )}
+        <LinearGradient
+          colors={["transparent", "rgba(0,0,0,0.7)"]}
+          style={styles.gradient}
+        >
+          <Text style={styles.title}>{name}</Text>
+        </LinearGradient>
       </ImageBackground>
     </TouchableOpacity>
   );
@@ -61,56 +51,31 @@ const CategoryCard = ({ name, imageUrl, id }) => {
 
 const styles = StyleSheet.create({
   container: {
-    width: cardWidth,
-    height: cardHeight,
-    marginBottom: 15,
-    borderRadius: 20,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    backgroundColor: "#f0f0f0",
+    borderRadius: 12,
+    overflow: "hidden",
+    elevation: 3,
   },
-  imageBackground: {
+  image: {
     width: "100%",
     height: "100%",
     justifyContent: "flex-end",
-    overflow: "hidden",
-    borderRadius: 20,
   },
   imageStyle: {
-    borderRadius: 20,
+    borderRadius: 12,
   },
   gradient: {
+    width: "100%",
     height: "50%",
     justifyContent: "flex-end",
-    padding: 20,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    padding: 10,
   },
-  name: {
-    fontFamily: "Outfit-Bold",
-    fontSize: 24,
-    color: "white",
-    textShadowColor: "rgba(0, 0, 0, 0.75)",
-    textShadowOffset: { width: -1, height: 1 },
-    textShadowRadius: 10,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.1)",
-    borderRadius: 20,
-  },
-  errorText: {
-    fontFamily: "Outfit-Regular",
-    color: "#666",
+  title: {
+    color: "#fff",
     fontSize: 16,
+    fontFamily: "Outfit-Bold",
+    textShadowColor: "rgba(0, 0, 0, 0.75)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
 });
 

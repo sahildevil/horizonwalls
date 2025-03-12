@@ -6,13 +6,12 @@ import {
   Text,
 } from "react-native";
 import React, { useEffect, useState } from "react";
-import Header from "../../components/Header";
 import CategoryCard from "../../components/CategoryCard";
 import { useTheme } from "../../providers/ThemeProvider";
 import { useScrollContext } from "../../providers/ScrollContext";
+import { StatusBar } from "expo-status-bar";
+import { categoryService } from "../../services/appwrite";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL + "/categories";
-//const API_URL = "http://192.168.1.3:8000/api/categories";
 const Categories = () => {
   const { isDarkTheme, currentTheme } = useTheme();
   const { handleScroll } = useScrollContext();
@@ -23,17 +22,11 @@ const Categories = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch(API_URL);
+        // Use the categoryService from your appwrite.js service file
+        const categoryData = await categoryService.getCategories();
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log("Categories response:", data);
-
-        // Data is now directly an array from Appwrite
-        setCategories(data);
+        console.log("Categories from Appwrite:", categoryData);
+        setCategories(categoryData);
       } catch (error) {
         console.error("Error fetching categories:", error);
         setError(error.message);
@@ -50,7 +43,8 @@ const Categories = () => {
       <View
         style={[styles.loader, { backgroundColor: currentTheme.background }]}
       >
-        <ActivityIndicator size="large" color='tomato' />
+        <StatusBar style={isDarkTheme ? "light" : "dark"} />
+        <ActivityIndicator size="large" color="tomato" />
       </View>
     );
   }
@@ -63,6 +57,7 @@ const Categories = () => {
           { backgroundColor: currentTheme.background },
         ]}
       >
+        <StatusBar style={isDarkTheme ? "light" : "dark"} />
         <Text style={[styles.errorText, { color: currentTheme.text }]}>
           Error loading categories: {error}
         </Text>
@@ -74,20 +69,24 @@ const Categories = () => {
     <View
       style={[styles.container, { backgroundColor: currentTheme.background }]}
     >
+      <StatusBar style={isDarkTheme ? "light" : "dark"} />
       <Text style={[styles.title, { color: currentTheme.text }]}>
         Categories
       </Text>
       <FlatList
         data={categories}
-        keyExtractor={(item) => item.$id} // Changed from _id to $id
+        keyExtractor={(item) => item.$id}
         renderItem={({ item }) => (
           <CategoryCard
-            name={item.name}
-            imageUrl={item.imageUrl} // Changed from image to imageUrl
-            id={item.$id} // Changed from _id to $id
+            category={item}
+            style={[
+              styles.categoryCard,
+              { backgroundColor: currentTheme.cardBackground },
+            ]}
           />
         )}
-        contentContainerStyle={styles.listContainer}
+        numColumns={2}
+        contentContainerStyle={styles.gridContainer}
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
         scrollEventThrottle={16}
@@ -99,17 +98,24 @@ const Categories = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 40,
+    paddingTop: 60,
   },
   title: {
-    fontFamily: "Outfit-Bold",
     fontSize: 28,
-    marginHorizontal: 20,
-    marginTop: 10,
-    marginBottom: 5,
+    fontFamily: "Outfit-Bold",
+    marginBottom: 20,
+    marginLeft: 16,
   },
-  listContainer: {
-    padding: 15,
+  gridContainer: {
+    padding: 16,
+  },
+  categoryCard: {
+    flex: 1,
+    margin: 8,
+    height: 120,
+    borderRadius: 12,
+    backgroundColor: "#f0f0f0",
+    overflow: "hidden",
   },
   loader: {
     flex: 1,

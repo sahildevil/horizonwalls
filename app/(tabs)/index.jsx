@@ -64,12 +64,12 @@ const Home = () => {
 
       // Use direct Appwrite service instead of API call
       const response = await wallpaperService.getWallpapers(
-        20,                      // limit
+        20, // limit
         shouldRefresh ? null : nextCursor // cursor (null if refreshing)
       );
 
-      console.log("Appwrite response:", response);
-      
+      //console.log("Appwrite response:", response);
+
       const data = response.documents;
       const paginationInfo = response.pagination;
 
@@ -313,6 +313,7 @@ const Home = () => {
             <ImageCard
               imageUrl={item.imageUrl}
               wallpaperName={item.title}
+              id={item.$id} // Pass the ID to ImageCard
               style={[
                 styles.card,
                 { backgroundColor: currentTheme.cardBackground },
@@ -331,8 +332,8 @@ const Home = () => {
             tintColor="tomato"
           />
         }
-        onScroll={handleScroll} 
-        scrollEventThrottle={16} 
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         onEndReached={onEndReachedHandler}
         onEndReachedThreshold={0.2}
         ListFooterComponent={
