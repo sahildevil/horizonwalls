@@ -44,14 +44,14 @@ const Favs = () => {
   const loadFavorites = async () => {
     try {
       const favoritesData = await AsyncStorage.getItem("favorites");
-      console.log("Loaded favorites:", favoritesData); // Debug log
+      //console.log("Loaded favorites:", favoritesData); // Debug log
       if (favoritesData) {
         const parsedFavorites = JSON.parse(favoritesData);
-        console.log("Parsed favorites:", parsedFavorites); // Debug log
+        //console.log("Parsed favorites:", parsedFavorites); // Debug log
         setFavorites(parsedFavorites);
       }
     } catch (error) {
-      console.error("Error loading favorites:", error);
+      //console.error("Error loading favorites:", error);
     }
   };
 

@@ -73,8 +73,8 @@ const Home = () => {
       const data = response.documents;
       const paginationInfo = response.pagination;
 
-      console.log("Fetched wallpapers count:", data.length);
-      console.log("Pagination info:", paginationInfo);
+      //console.log("Fetched wallpapers count:", data.length);
+      //console.log("Pagination info:", paginationInfo);
 
       // Handle pagination
       if (paginationInfo) {

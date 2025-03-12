@@ -40,7 +40,7 @@ const CategoryDetails = () => {
     ? decodeURIComponent(params.categoryName)
     : params.name;
 
-  console.log(`Loading category: ID=${categoryId}, Name=${name}`);
+  //console.log(`Loading category: ID=${categoryId}, Name=${name}`);
 
   const { isDarkTheme, currentTheme } = useTheme();
   const [wallpapers, setWallpapers] = useState([]);
@@ -54,11 +54,11 @@ const CategoryDetails = () => {
   const [isEndReached, setIsEndReached] = useState(false);
 
   // Verify if the DATABASE_ID and WALLPAPERS_COLLECTION_ID are loaded
-  console.log("Database and Collection IDs:", {
-    DATABASE_ID,
-    WALLPAPERS_COLLECTION_ID,
-    categoryId,
-  });
+  // console.log("Database and Collection IDs:", {
+  //   DATABASE_ID,
+  //   WALLPAPERS_COLLECTION_ID,
+  //   categoryId,
+  // });
 
   const isFetchingRef = useRef(false);
   // Use refs to avoid dependency cycles
@@ -76,7 +76,7 @@ const CategoryDetails = () => {
     async (shouldRefresh = false) => {
       // Prevent multiple simultaneous fetches
       if (isFetchingRef.current && !shouldRefresh) {
-        console.log("Already fetching, skipping duplicate request");
+        //console.log("Already fetching, skipping duplicate request");
         return;
       }
 
@@ -89,7 +89,7 @@ const CategoryDetails = () => {
         }
 
         if (!hasMore && !shouldRefresh) {
-          console.log("No more wallpapers to fetch for category:", categoryId);
+          //console.log("No more wallpapers to fetch for category:", categoryId);
           setLoadingMore(false);
           return;
         }

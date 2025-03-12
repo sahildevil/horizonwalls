@@ -89,7 +89,7 @@ const Screens = () => {
         const id = params.id;
         const categoryId = params.categoryId;
         const fromFavorites = params.fromFavorites === "true";
-        const favoritesListJSON = params.favoritesList; // This will be a JSON string
+        const favoritesListJSON = params.favoritesList;
 
         console.log("Opening wallpaper:", {
           imageUrl,
@@ -99,32 +99,20 @@ const Screens = () => {
           fromFavorites,
         });
 
-        // If coming from favorites, use the provided favorites list
+        // Handle favorites mode
         if (fromFavorites && favoritesListJSON) {
           try {
-            // First try to parse if it's already a JSON string
             let favoritesList;
             try {
-              // If it's passed as a JSON string (which happens through URL params)
               favoritesList = JSON.parse(favoritesListJSON);
             } catch (e) {
-              // If it's already an object (direct navigation within JS)
               favoritesList = favoritesListJSON;
             }
 
-            console.log(
-              "Using favorites list for wallpapers:",
-              Array.isArray(favoritesList)
-                ? favoritesList.length
-                : "Invalid favorites"
-            );
-
-            // Use favorites as our wallpapers source
             if (Array.isArray(favoritesList) && favoritesList.length > 0) {
               setWallpapers(favoritesList);
-              setHasMore(false); // No pagination for favorites
+              setHasMore(false);
 
-              // Find the index of the current wallpaper
               const index = favoritesList.findIndex(
                 (w) =>
                   (id && w.id === id) || (imageUrl && w.imageUrl === imageUrl)
@@ -136,67 +124,124 @@ const Screens = () => {
               }
 
               setLoading(false);
-              return; // Exit early, we've loaded from favorites
+              return;
             }
           } catch (error) {
             console.error("Error parsing favorites list:", error);
-            // Fall back to normal loading if favorites parsing fails
           }
         }
 
-        // If not from favorites, or if favorites loading failed, proceed with normal loading
-        let response;
+        // Main wallpaper loading logic for non-favorites
+        let targetWallpaper = null;
 
-        // If we have a categoryId, fetch only wallpapers from that category
-        if (categoryId) {
-          console.log(`Loading wallpapers from category: ${categoryId}`);
-          response = await wallpaperService.getWallpapersByCategory(
-            categoryId,
-            20
+        // 1. First try to fetch the clicked wallpaper directly if we have an ID
+        if (id) {
+          try {
+            targetWallpaper = await wallpaperService.getWallpaperById(id);
+            console.log(
+              "Successfully fetched target wallpaper:",
+              targetWallpaper.title
+            );
+          } catch (error) {
+            console.error("Error fetching specific wallpaper:", error);
+          }
+        }
+
+        // 2. Fetch a batch of wallpapers around the target date
+        let mainWallpapers = [];
+        let targetIndex = 0;
+
+        if (targetWallpaper) {
+          // We have the target wallpaper, now fetch a batch centered around it
+          const targetCreatedAt = targetWallpaper.$createdAt;
+
+          // Load newest wallpapers first (up to 10)
+          const newestResponse = await wallpaperService.getWallpapers(
+            10,
+            null,
+            categoryId
           );
-        } else {
-          // Otherwise fetch all wallpapers
-          console.log("Loading all wallpapers");
-          response = await wallpaperService.getWallpapers(20);
-        }
+          let newestWallpapers = newestResponse.documents || [];
 
-        if (response && response.documents) {
-          console.log(`Loaded ${response.documents.length} wallpapers`);
+          // Check if our target wallpaper is among the newest
+          const targetInNewest = newestWallpapers.findIndex(
+            (w) => w.$id === id
+          );
 
-          // Store the wallpapers
-          setWallpapers(response.documents);
+          if (targetInNewest !== -1) {
+            // Target is in the newest batch, use this batch
+            console.log(
+              "Target wallpaper found in newest batch at position",
+              targetInNewest
+            );
+            mainWallpapers = newestWallpapers;
+            targetIndex = targetInNewest;
+          } else {
+            // Target isn't in newest batch, fetch a centered batch
+            console.log("Target not in newest batch, fetching centered batch");
 
-          // Set pagination cursor for loading more
-          if (response.pagination) {
-            setNextCursor(response.pagination.nextCursor);
-            setHasMore(!!response.pagination.nextCursor);
+            // First, load wallpapers NEWER than target (these will come first)
+            const newerResponse = await wallpaperService.getWallpapersAfter(
+              targetCreatedAt,
+              5,
+              categoryId
+            );
+            const newerWallpapers = newerResponse?.documents || [];
+
+            // Then, load wallpapers OLDER than target (these will come after)
+            const olderResponse = await wallpaperService.getWallpapersBefore(
+              targetCreatedAt,
+              14,
+              categoryId
+            );
+            const olderWallpapers = olderResponse?.documents || [];
+
+            // Combine in correct order: newer (newest first) + target + older (newest first)
+            mainWallpapers = [
+              ...newerWallpapers,
+              targetWallpaper,
+              ...olderWallpapers,
+            ];
+            targetIndex = newerWallpapers.length;
+
+            console.log(
+              `Combined ${newerWallpapers.length} newer + 1 target + ${olderWallpapers.length} older wallpapers`
+            );
           }
+        } else {
+          // No target wallpaper, just load the newest batch
+          console.log("No target wallpaper, loading newest batch");
+          const response = await wallpaperService.getWallpapers(
+            20,
+            null,
+            categoryId
+          );
+          mainWallpapers = response.documents || [];
 
-          // Find index of the current wallpaper
-          if (id) {
-            const index = response.documents.findIndex((w) => w.$id === id);
-            if (index !== -1) {
-              console.log(`Found wallpaper at index ${index}`);
-              setCurrentIndex(index);
-            } else {
-              console.log(
-                `Wallpaper with ID ${id} not found in the loaded wallpapers`
-              );
-            }
-          } else if (imageUrl) {
-            const index = response.documents.findIndex(
+          // Find target by URL if available
+          if (imageUrl) {
+            const urlIndex = mainWallpapers.findIndex(
               (w) => w.imageUrl === imageUrl
             );
-            if (index !== -1) {
-              console.log(`Found wallpaper at index ${index}`);
-              setCurrentIndex(index);
-            } else {
-              console.log(
-                `Wallpaper with URL ${imageUrl} not found in the loaded wallpapers`
-              );
+            if (urlIndex !== -1) {
+              targetIndex = urlIndex;
             }
           }
         }
+
+        // Update state with the loaded wallpapers
+        setWallpapers(mainWallpapers);
+        setCurrentIndex(targetIndex);
+        setNextCursor(
+          mainWallpapers.length > 0
+            ? mainWallpapers[mainWallpapers.length - 1].$id
+            : null
+        );
+        setHasMore(mainWallpapers.length >= 20);
+
+        console.log(
+          `Loaded ${mainWallpapers.length} wallpapers, target at index ${targetIndex}`
+        );
       } catch (error) {
         console.error("Error loading wallpapers:", error);
         setError(error.message);
@@ -214,50 +259,98 @@ const Screens = () => {
     params.favoritesList,
   ]);
 
-  // Load more wallpapers when approaching the end
-  const loadMoreWallpapers = async () => {
-    if (!hasMore || loadingMore) return;
+  // Add a useEffect after the wallpapers are loaded to ensure correct scrolling
+  useEffect(() => {
+    // Only proceed if wallpapers are loaded and not loading
+    if (
+      wallpapers.length > 0 &&
+      !loading &&
+      flatListRef.current &&
+      currentIndex > 0
+    ) {
+      // Add a small delay to ensure the FlatList has rendered
+      const timer = setTimeout(() => {
+        try {
+          console.log(`Scrolling to wallpaper at index ${currentIndex}`);
+          flatListRef.current.scrollToIndex({
+            index: currentIndex,
+            animated: false,
+            viewPosition: 0,
+            viewOffset: 0,
+          });
+        } catch (error) {
+          console.error("Error scrolling to index:", error);
+        }
+      }, 100);
 
-    // Check if we're in favorites mode - if so, no more loading needed
-    if (params.fromFavorites === "true") {
-      console.log("In favorites mode - no more wallpapers to load");
-      setHasMore(false);
-      return;
+      return () => clearTimeout(timer);
     }
+  }, [wallpapers, loading, currentIndex]);
+
+  // Also add state to track if the list has initially scrolled
+  const [hasInitiallyScrolled, setHasInitiallyScrolled] = useState(false);
+
+  // Add this state to better track loading states
+  const [isLoadingNewer, setIsLoadingNewer] = useState(false);
+  const [isAtStart, setIsAtStart] = useState(false);
+  const [isAtEnd, setIsAtEnd] = useState(false);
+
+  // Define onEndReached handler
+  const onEndReached = () => {
+    if (!loadingMore && hasMore && !params.fromFavorites) {
+      console.log("End reached, loading more older wallpapers");
+      loadMoreWallpapers();
+    }
+  };
+
+  // Simplified loadMoreWallpapers - focus on reliability
+  const loadMoreWallpapers = async () => {
+    if (loadingMore || !hasMore || params.fromFavorites === "true") return;
 
     try {
       setLoadingMore(true);
-      console.log("Loading more wallpapers, cursor:", nextCursor);
+      console.log("Loading more older wallpapers...");
 
-      const categoryId = params.categoryId;
-      let response;
-
-      // If we have a categoryId, fetch more wallpapers from that category
-      if (categoryId) {
-        console.log(`Loading more wallpapers from category: ${categoryId}`);
-        response = await wallpaperService.getWallpapersByCategory(
-          categoryId,
-          20,
-          nextCursor
-        );
-      } else {
-        // Otherwise fetch all wallpapers
-        console.log("Loading more from all wallpapers");
-        response = await wallpaperService.getWallpapers(20, nextCursor);
+      // Get the last (oldest) wallpaper
+      const lastWallpaper = wallpapers[wallpapers.length - 1];
+      if (!lastWallpaper || !lastWallpaper.$createdAt) {
+        setLoadingMore(false);
+        return;
       }
 
-      if (response && response.documents && response.documents.length > 0) {
-        setWallpapers((prev) => [...prev, ...response.documents]);
+      // Get older wallpapers (created before our oldest one)
+      const olderResponse = await wallpaperService.getWallpapersBefore(
+        lastWallpaper.$createdAt,
+        10,
+        params.categoryId
+      );
 
-        if (response.pagination) {
-          setNextCursor(response.pagination.nextCursor);
-          setHasMore(!!response.pagination.nextCursor);
-        } else {
-          setHasMore(false);
-        }
-      } else {
+      if (
+        !olderResponse ||
+        !olderResponse.documents ||
+        olderResponse.documents.length === 0
+      ) {
+        console.log("No more older wallpapers");
         setHasMore(false);
+        setIsAtEnd(true);
+        return;
       }
+
+      // Filter out duplicates using a more reliable method
+      const existingIds = new Set(wallpapers.map((wp) => wp.$id || wp.id));
+      const newWallpapers = olderResponse.documents.filter(
+        (wp) => !existingIds.has(wp.$id)
+      );
+
+      if (newWallpapers.length === 0) {
+        console.log("All loaded wallpapers already exist in the list");
+        setHasMore(false);
+        return;
+      }
+
+      console.log(`Adding ${newWallpapers.length} older wallpapers`);
+      setWallpapers((prev) => [...prev, ...newWallpapers]);
+      setHasMore(newWallpapers.length >= 5);
     } catch (error) {
       console.error("Error loading more wallpapers:", error);
     } finally {
@@ -265,17 +358,108 @@ const Screens = () => {
     }
   };
 
-  // Handle viewable items change
-  const onViewableItemsChanged = useRef(({ viewableItems }) => {
-    if (viewableItems.length > 0) {
-      const index = viewableItems[0].index;
-      setCurrentIndex(index);
-    }
-  }).current;
+  // Add a function to detect when user scrolls to the top
+  const handleScroll = (event) => {
+    const offsetY = event.nativeEvent.contentOffset.y;
 
-  const viewabilityConfig = {
-    itemVisiblePercentThreshold: 50,
+    // If we're at the very top and not already loading newer
+    if (
+      offsetY < 20 &&
+      !isLoadingNewer &&
+      !isAtStart &&
+      wallpapers.length > 0
+    ) {
+      loadNewerWallpapers();
+    }
   };
+
+  // Improved loadNewerWallpapers function
+  const loadNewerWallpapers = async () => {
+    if (isLoadingNewer || params.fromFavorites === "true" || isAtStart) return;
+
+    try {
+      setIsLoadingNewer(true);
+      console.log("Loading newer wallpapers...");
+
+      // Get the first (newest) wallpaper
+      const firstWallpaper = wallpapers[0];
+      if (!firstWallpaper || !firstWallpaper.$createdAt) {
+        setIsLoadingNewer(false);
+        return;
+      }
+
+      const newerResponse = await wallpaperService.getWallpapersAfter(
+        firstWallpaper.$createdAt,
+        10,
+        params.categoryId
+      );
+
+      if (
+        !newerResponse ||
+        !newerResponse.documents ||
+        newerResponse.documents.length === 0
+      ) {
+        console.log("No newer wallpapers available");
+        setIsAtStart(true);
+        return;
+      }
+
+      // Filter out duplicates
+      const existingIds = new Set(wallpapers.map((wp) => wp.$id || wp.id));
+      const newWallpapers = newerResponse.documents.filter(
+        (wp) => !existingIds.has(wp.$id)
+      );
+
+      if (newWallpapers.length === 0) {
+        console.log("No new wallpapers to add at the top");
+        setIsAtStart(true);
+        return;
+      }
+
+      console.log(
+        `Adding ${newWallpapers.length} newer wallpapers at the beginning`
+      );
+
+      // Add new wallpapers and adjust the current index
+      setWallpapers((prev) => [...newWallpapers, ...prev]);
+      setCurrentIndex((prev) => prev + newWallpapers.length);
+    } catch (error) {
+      console.error("Error loading newer wallpapers:", error);
+    } finally {
+      setIsLoadingNewer(false);
+    }
+  };
+
+  // Improved viewability configuration
+  const viewabilityConfigCallbackPairs = useRef([
+    {
+      viewabilityConfig: {
+        minimumViewTime: 100,
+        itemVisiblePercentThreshold: 50,
+        waitForInteraction: false,
+      },
+      onViewableItemsChanged: ({ viewableItems }) => {
+        if (!viewableItems || viewableItems.length === 0) return;
+
+        const visibleIndex = viewableItems[0].index;
+
+        // Update current index when a new item becomes visible
+        if (visibleIndex !== currentIndex) {
+          console.log(`Now viewing wallpaper at index ${visibleIndex}`);
+          setCurrentIndex(visibleIndex);
+
+          // Preload more content when approaching the end
+          if (
+            visibleIndex >= wallpapers.length - 3 &&
+            hasMore &&
+            !loadingMore
+          ) {
+            loadMoreWallpapers();
+          }
+        }
+      },
+    },
+  ]).current;
 
   // Toggle favorite status for current wallpaper
   const toggleFavorite = async (wallpaper) => {
@@ -499,8 +683,13 @@ const Screens = () => {
 
         {/* Navigation Hints at bottom center */}
         <View style={styles.navigationHints}>
-          <Ionicons name="chevron-up" size={24} color="white" />
-          <Text style={styles.hintText}>Swipe up for next wallpaper</Text>
+          {currentIndex < wallpapers.length - 1 && (
+            <Ionicons name="chevron-up" size={24} color="white" />
+          )}
+          <Text style={styles.hintText}>{getNavigationHintText()}</Text>
+          {currentIndex > 0 && (
+            <Ionicons name="chevron-down" size={24} color="white" />
+          )}
         </View>
       </View>
     );
@@ -530,31 +719,65 @@ const Screens = () => {
     );
   }
 
+  // Update the hint text based on current position
+  const getNavigationHintText = () => {
+    if (wallpapers.length <= 1) return "No more wallpapers";
+    if (currentIndex === 0) return "Swipe up for older wallpapers";
+    if (currentIndex === wallpapers.length - 1)
+      return "Swipe down for newer wallpapers";
+    return "Swipe up/down to browse wallpapers";
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar translucent style="light" />
 
+      {/* Add header indicator when loading newer */}
+      {isLoadingNewer && (
+        <View style={styles.topLoaderContainer}>
+          <ActivityIndicator color="white" size="small" />
+          <Text style={styles.loadingText}>Loading newer wallpapers...</Text>
+        </View>
+      )}
+
       <FlatList
         ref={flatListRef}
         data={wallpapers}
-        keyExtractor={(item) => item.$id}
+        keyExtractor={(item, index) =>
+          `wallpaper-${item?.$id || item?.id || Math.random()}-${index}`
+        }
         renderItem={renderWallpaperItem}
+        viewabilityConfigCallbackPairs={viewabilityConfigCallbackPairs}
         initialScrollIndex={currentIndex}
         getItemLayout={(data, index) => ({
           length: height,
           offset: height * index,
           index,
         })}
-        pagingEnabled
+        pagingEnabled={true}
         showsVerticalScrollIndicator={false}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
-        onEndReached={() => {
-          if (wallpapers.length >= 10 && currentIndex > wallpapers.length - 5) {
-            loadMoreWallpapers();
-          }
+        decelerationRate="fast"
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        onEndReached={onEndReached}
+        onEndReachedThreshold={0.1}
+        onScrollToIndexFailed={(info) => {
+          console.log("Failed to scroll to index", info);
+          setTimeout(() => {
+            if (flatListRef.current && wallpapers.length > info.index) {
+              flatListRef.current.scrollToOffset({
+                offset: info.index * height,
+                animated: false,
+              });
+            }
+          }, 100);
         }}
-        onEndReachedThreshold={0.5}
+        snapToInterval={height}
+        snapToAlignment="start"
+        removeClippedSubviews={Platform.OS === "android"}
+        initialNumToRender={3}
+        maxToRenderPerBatch={3}
+        windowSize={5}
         ListFooterComponent={
           loadingMore ? (
             <View style={styles.loadingMoreContainer}>
@@ -565,10 +788,6 @@ const Screens = () => {
             </View>
           ) : null
         }
-        snapToInterval={height}
-        decelerationRate="fast"
-        snapToAlignment="start"
-        vertical
       />
 
       <ConsentManager onConsentDetermined={handleConsentDetermined} />
@@ -719,6 +938,19 @@ const styles = StyleSheet.create({
   loadingMoreText: {
     color: "white",
     marginTop: 10,
+    fontFamily: "Outfit-Regular",
+  },
+  topLoaderContainer: {
+    position: "absolute",
+    top: 50,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    zIndex: 10,
+  },
+  loadingText: {
+    color: "white",
+    marginTop: 5,
     fontFamily: "Outfit-Regular",
   },
 });

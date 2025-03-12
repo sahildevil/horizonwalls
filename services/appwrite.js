@@ -136,6 +136,84 @@ export const wallpaperService = {
       throw error;
     }
   },
+
+  // Get a single wallpaper by ID
+  getWallpaperById: async (id) => {
+    try {
+      console.log(`Fetching specific wallpaper with ID: ${id}`);
+
+      const response = await databases.getDocument(
+        DATABASE_ID,
+        WALLPAPERS_COLLECTION_ID,
+        id
+      );
+
+      console.log("Got wallpaper by ID:", response.title || response.$id);
+      return response;
+    } catch (error) {
+      console.error("Error fetching wallpaper by ID:", error);
+      throw error;
+    }
+  },
+
+  // Get wallpapers created before a specific date
+  getWallpapersBefore: async (createdAt, limit = 10, categoryId = null) => {
+    try {
+      console.log(`Fetching wallpapers created before ${createdAt}`);
+
+      let queries = [
+        Query.lessThan("$createdAt", createdAt),
+        Query.limit(limit),
+        Query.orderDesc("$createdAt"),
+      ];
+
+      // Add category filter if provided
+      if (categoryId) {
+        queries.push(Query.equal("categoryId", categoryId));
+      }
+
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        WALLPAPERS_COLLECTION_ID,
+        queries
+      );
+
+      return response;
+    } catch (error) {
+      console.error(`Error fetching wallpapers before ${createdAt}:`, error);
+      throw error;
+    }
+  },
+
+  // Get wallpapers created after a specific date
+  getWallpapersAfter: async (createdAt, limit = 10, categoryId = null) => {
+    try {
+      console.log(`Fetching wallpapers created after ${createdAt}`);
+
+      let queries = [
+        Query.greaterThan("$createdAt", createdAt),
+        Query.limit(limit),
+        // Use orderDesc to get newest first, which is the correct order for "newer than target"
+        Query.orderDesc("$createdAt"),
+      ];
+
+      // Add category filter if provided
+      if (categoryId) {
+        queries.push(Query.equal("categoryId", categoryId));
+      }
+
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        WALLPAPERS_COLLECTION_ID,
+        queries
+      );
+
+      return response;
+    } catch (error) {
+      console.error(`Error fetching wallpapers after ${createdAt}:`, error);
+      throw error;
+    }
+  },
 };
 
 // Service functions for categories

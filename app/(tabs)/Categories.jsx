@@ -25,7 +25,7 @@ const Categories = () => {
         // Use the categoryService from your appwrite.js service file
         const categoryData = await categoryService.getCategories();
 
-        console.log("Categories from Appwrite:", categoryData);
+        //console.log("Categories from Appwrite:", categoryData);
         setCategories(categoryData);
       } catch (error) {
         console.error("Error fetching categories:", error);
