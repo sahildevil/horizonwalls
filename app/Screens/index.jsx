@@ -25,8 +25,8 @@ import DownloadButton from "../../components/DownloadButton";
 import { wallpaperService } from "../../services/appwrite";
 
 // Get the true screen dimensions including notches and status bar
-const windowDimensions = Dimensions.get('window');
-const screenDimensions = Dimensions.get('screen');
+const windowDimensions = Dimensions.get("window");
+const screenDimensions = Dimensions.get("screen");
 
 // Use screen dimensions for fullscreen content
 const { width, height } = screenDimensions;
@@ -302,17 +302,19 @@ const Screens = () => {
   const [isAtStart, setIsAtStart] = useState(false);
   const [isAtEnd, setIsAtEnd] = useState(false);
 
-  // Define onEndReached handler
+  // Update the onEndReached function with a more aggressive approach
+
   const onEndReached = () => {
-    if (!loadingMore && hasMore && !params.fromFavorites) {
-      console.log("End reached, loading more older wallpapers");
+    console.log("End reached, attempting to load more wallpapers");
+    // Remove hasMore check to force an attempt even if the state suggests no more wallpapers
+    if (!loadingMore && !params.fromFavorites) {
       loadMoreWallpapers();
     }
   };
 
-  // Simplified loadMoreWallpapers - focus on reliability
+  // Update the loadMoreWallpapers function for more reliability
   const loadMoreWallpapers = async () => {
-    if (loadingMore || !hasMore || params.fromFavorites === "true") return;
+    if (loadingMore || params.fromFavorites === "true") return;
 
     try {
       setLoadingMore(true);
@@ -321,6 +323,7 @@ const Screens = () => {
       // Get the last (oldest) wallpaper
       const lastWallpaper = wallpapers[wallpapers.length - 1];
       if (!lastWallpaper || !lastWallpaper.$createdAt) {
+        console.log("No valid last wallpaper found to paginate from");
         setLoadingMore(false);
         return;
       }
@@ -332,14 +335,18 @@ const Screens = () => {
         params.categoryId
       );
 
-      if (
-        !olderResponse ||
-        !olderResponse.documents ||
-        olderResponse.documents.length === 0
-      ) {
-        console.log("No more older wallpapers");
+      console.log(
+        "Older wallpapers response:",
+        olderResponse?.documents?.length
+          ? `Found ${olderResponse.documents.length} items`
+          : "No items found"
+      );
+
+      if (!olderResponse?.documents || olderResponse.documents.length === 0) {
+        console.log("No more older wallpapers available");
         setHasMore(false);
         setIsAtEnd(true);
+        setLoadingMore(false);
         return;
       }
 
@@ -349,14 +356,23 @@ const Screens = () => {
         (wp) => !existingIds.has(wp.$id)
       );
 
+      console.log(
+        `After filtering, found ${newWallpapers.length} unique new wallpapers to add`
+      );
+
       if (newWallpapers.length === 0) {
         console.log("All loaded wallpapers already exist in the list");
         setHasMore(false);
+        setLoadingMore(false);
         return;
       }
 
-      console.log(`Adding ${newWallpapers.length} older wallpapers`);
+      console.log(
+        `Adding ${newWallpapers.length} older wallpapers to the list`
+      );
       setWallpapers((prev) => [...prev, ...newWallpapers]);
+
+      // Always assume there might be more unless we got fewer than requested
       setHasMore(newWallpapers.length >= 5);
     } catch (error) {
       console.error("Error loading more wallpapers:", error);
@@ -437,12 +453,12 @@ const Screens = () => {
     }
   };
 
-  // Improved viewability configuration
+  // Update the viewabilityConfigCallbackPairs:
   const viewabilityConfigCallbackPairs = useRef([
     {
       viewabilityConfig: {
-        minimumViewTime: 100,
-        itemVisiblePercentThreshold: 50,
+        minimumViewTime: 50, // Decreased to be more responsive
+        itemVisiblePercentThreshold: 20, // Decreased to detect items earlier
         waitForInteraction: false,
       },
       onViewableItemsChanged: ({ viewableItems }) => {
@@ -452,16 +468,21 @@ const Screens = () => {
 
         // Update current index when a new item becomes visible
         if (visibleIndex !== currentIndex) {
-          console.log(`Now viewing wallpaper at index ${visibleIndex}`);
+          console.log(
+            `Now viewing wallpaper at index ${visibleIndex} of ${wallpapers.length}`
+          );
           setCurrentIndex(visibleIndex);
 
-          // Preload more content when approaching the end
-          if (
-            visibleIndex >= wallpapers.length - 3 &&
-            hasMore &&
-            !loadingMore
-          ) {
-            loadMoreWallpapers();
+          // More aggressive preloading - start loading when within 5 items of the end
+          if (visibleIndex >= wallpapers.length - 5) {
+            console.log(
+              `Within ${
+                wallpapers.length - visibleIndex
+              } items of the end, preloading more`
+            );
+            if (!loadingMore) {
+              loadMoreWallpapers();
+            }
           }
         }
       },
@@ -739,7 +760,7 @@ const Screens = () => {
   return (
     <View style={styles.outerContainer}>
       <StatusBar translucent style="light" />
-      
+
       {/* Add header indicator when loading newer */}
       {isLoadingNewer && (
         <View style={styles.topLoaderContainer}>
@@ -768,7 +789,10 @@ const Screens = () => {
         onScroll={handleScroll}
         scrollEventThrottle={16}
         onEndReached={onEndReached}
-        onEndReachedThreshold={0.1}
+        onEndReachedThreshold={0.5} // Increased from 0.1 to detect end earlier
+        maintainVisibleContentPosition={{
+          minIndexForVisible: 0,
+        }}
         contentContainerStyle={{
           // This ensures no padding is applied
           paddingTop: 0,
@@ -819,21 +843,21 @@ const styles = StyleSheet.create({
     width: screenDimensions.width,
     height: screenDimensions.height,
   },
-  
+
   container: {
     flex: 1,
     backgroundColor: "black",
     width: screenDimensions.width,
     height: screenDimensions.height,
   },
-  
+
   slideContainer: {
     width: screenDimensions.width,
     height: screenDimensions.height,
     backgroundColor: "black",
     overflow: "hidden",
   },
-  
+
   image: {
     position: "absolute",
     width: screenDimensions.width,
