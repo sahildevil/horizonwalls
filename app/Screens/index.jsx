@@ -10,6 +10,8 @@ import {
   Dimensions,
   FlatList,
   ActivityIndicator,
+  StatusBar as RNStatusBar,
+  SafeAreaView,
 } from "react-native";
 import React, { useEffect, useState, useRef } from "react";
 import { StatusBar } from "expo-status-bar";
@@ -22,7 +24,12 @@ import ConsentManager from "../../components/ConsentManager";
 import DownloadButton from "../../components/DownloadButton";
 import { wallpaperService } from "../../services/appwrite";
 
-const { width, height } = Dimensions.get("window");
+// Get the true screen dimensions including notches and status bar
+const windowDimensions = Dimensions.get('window');
+const screenDimensions = Dimensions.get('screen');
+
+// Use screen dimensions for fullscreen content
+const { width, height } = screenDimensions;
 
 const Screens = () => {
   const params = useLocalSearchParams();
@@ -728,10 +735,11 @@ const Screens = () => {
     return "Swipe up/down to browse wallpapers";
   };
 
+  // Update the return statement in your component:
   return (
-    <View style={styles.container}>
+    <View style={styles.outerContainer}>
       <StatusBar translucent style="light" />
-
+      
       {/* Add header indicator when loading newer */}
       {isLoadingNewer && (
         <View style={styles.topLoaderContainer}>
@@ -761,6 +769,13 @@ const Screens = () => {
         scrollEventThrottle={16}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.1}
+        contentContainerStyle={{
+          // This ensures no padding is applied
+          paddingTop: 0,
+          paddingBottom: 0,
+          paddingLeft: 0,
+          paddingRight: 0,
+        }}
         onScrollToIndexFailed={(info) => {
           console.log("Failed to scroll to index", info);
           setTimeout(() => {
@@ -798,24 +813,32 @@ const Screens = () => {
 export default Screens;
 
 const styles = StyleSheet.create({
+  outerContainer: {
+    flex: 1,
+    backgroundColor: "black",
+    width: screenDimensions.width,
+    height: screenDimensions.height,
+  },
+  
   container: {
     flex: 1,
     backgroundColor: "black",
+    width: screenDimensions.width,
+    height: screenDimensions.height,
   },
+  
   slideContainer: {
-    width,
-    height,
+    width: screenDimensions.width,
+    height: screenDimensions.height,
     backgroundColor: "black",
+    overflow: "hidden",
   },
+  
   image: {
-    flex: 1,
-    width: "100%",
-    height: "100%",
     position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    width: screenDimensions.width,
+    height: screenDimensions.height,
+    resizeMode: "cover",
   },
   headerContainer: {
     flexDirection: "row",
