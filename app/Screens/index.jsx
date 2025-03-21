@@ -676,7 +676,7 @@ const Screens = () => {
               color={isFavorite ? "#ff4757" : "white"}
             />
             <Text style={styles.toolbarButtonLabel}>
-              {isFavorite ? "Saved" : "Save"}
+              {isFavorite ? "Liked" : "Like"}
             </Text>
           </TouchableOpacity>
 
@@ -715,9 +715,7 @@ const Screens = () => {
             <Ionicons name="chevron-up" size={24} color="white" />
           )}
           <Text style={styles.hintText}>{getNavigationHintText()}</Text>
-          {currentIndex > 0 && (
-            <Ionicons name="chevron-down" size={24} color="white" />
-          )}
+
         </View>
       </View>
     );
@@ -750,10 +748,10 @@ const Screens = () => {
   // Update the hint text based on current position
   const getNavigationHintText = () => {
     if (wallpapers.length <= 1) return "No more wallpapers";
-    if (currentIndex === 0) return "Swipe up for older wallpapers";
+    if (currentIndex === 0) return "Swipe up for more wallpapers";
     if (currentIndex === wallpapers.length - 1)
       return "Swipe down for newer wallpapers";
-    return "Swipe up/down to browse wallpapers";
+    return "Swipe up to browse wallpapers";
   };
 
   // Update the return statement in your component:

@@ -5,7 +5,8 @@ import {
   TouchableOpacity,
   View,
   Alert,
-  Linking, // Add this import
+  Linking,
+  Platform, // Add this import
 } from "react-native";
 import React, { useState } from "react";
 import Feather from "@expo/vector-icons/Feather";
@@ -15,6 +16,7 @@ import { useAuth } from "../providers/AuthProvider";
 import { useTheme } from "../providers/ThemeProvider";
 import Entypo from "@expo/vector-icons/Entypo";
 import { StatusBar } from "expo-status-bar";
+import { StatusBar as RNStatusBar } from 'react-native';
 
 const Header = () => {
   const router = useRouter();
@@ -202,7 +204,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 12,
-    paddingTop: 50,
+    paddingTop: Platform.OS === "android" 
+    ? RNStatusBar.currentHeight // Add some extra padding
+    : 20,
+    paddingBottom: 10,
   },
   heading: {
     fontFamily: "Tan-Mon",
