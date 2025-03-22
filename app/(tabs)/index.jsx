@@ -15,6 +15,7 @@ import { StatusBar } from "expo-status-bar";
 import { useTheme } from "../../providers/ThemeProvider";
 import { useScrollContext } from "../../providers/ScrollContext";
 import { wallpaperService } from "../../services/appwrite";
+import NotificationPrompt from "../../components/NotificationPrompt";
 
 const { width } = Dimensions.get("window");
 const CARD_MARGIN = 8;
@@ -305,6 +306,7 @@ const Home = () => {
     >
       <StatusBar style={isDarkTheme ? "light" : "dark"} />
       <Header />
+      <NotificationPrompt />
       <FlatList
         data={wallpapers}
         keyExtractor={(item) => item.$id}

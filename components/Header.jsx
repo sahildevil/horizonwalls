@@ -16,13 +16,15 @@ import { useAuth } from "../providers/AuthProvider";
 import { useTheme } from "../providers/ThemeProvider";
 import Entypo from "@expo/vector-icons/Entypo";
 import { StatusBar } from "expo-status-bar";
-import { StatusBar as RNStatusBar } from 'react-native';
+import { StatusBar as RNStatusBar } from "react-native";
+import NotificationPrompt from "./NotificationPrompt"; // Import the NotificationPrompt component
 
 const Header = () => {
   const router = useRouter();
   const { signOut, user } = useAuth();
   const { isDarkTheme, toggleTheme, currentTheme } = useTheme();
   const [isMenuVisible, setIsMenuVisible] = useState(false);
+  const [showNotificationPrompt, setShowNotificationPrompt] = useState(false); // State to control NotificationPrompt
 
   const toggleMenu = () => setIsMenuVisible(!isMenuVisible);
 
@@ -61,6 +63,14 @@ const Header = () => {
       icon: "share-2",
       label: "Share App",
       onPress: () => console.log("Share App"),
+    },
+    {
+      icon: "bell",
+      label: "Notification Preference", // Add Notification Preference option
+      onPress: () => {
+        setShowNotificationPrompt(true); // Show the NotificationPrompt
+        toggleMenu(); // Close the menu
+      },
     },
     {
       icon: "book-open",
@@ -191,6 +201,14 @@ const Header = () => {
           </View>
         </Modal>
       </View>
+
+      {/* Render NotificationPrompt */}
+      {showNotificationPrompt && (
+        <NotificationPrompt
+          triggerManually={true}
+          onClose={() => setShowNotificationPrompt(false)} // Close the prompt when done
+        />
+      )}
     </>
   );
 };
@@ -204,9 +222,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 12,
-    paddingTop: Platform.OS === "android" 
-    ? RNStatusBar.currentHeight // Add some extra padding
-    : 20,
+    paddingTop:
+      Platform.OS === "android"
+        ? RNStatusBar.currentHeight // Add some extra padding
+        : 20,
     paddingBottom: 10,
   },
   heading: {

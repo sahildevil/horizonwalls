@@ -39,3 +39,6 @@ android/.gradle
 *.tsbuildinfo
 
 app-example
+
+google-services.json
+horizon-walls-firebase-adminsdk-fbsvc-52daacbf48.json
