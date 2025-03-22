@@ -288,7 +288,7 @@ const Home = () => {
       >
         <StatusBar style={isDarkTheme ? "light" : "dark"} />
         <Text style={[styles.errorText, { color: currentTheme.text }]}>
-          Error loading wallpapers: {error}
+          Server Under Maintainance, Please Try Again in a While!
         </Text>
         <TouchableOpacity
           style={styles.retryButton}

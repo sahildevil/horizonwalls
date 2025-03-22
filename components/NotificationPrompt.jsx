@@ -6,18 +6,24 @@ import {
   TouchableOpacity,
   Modal,
   Alert,
+  ToastAndroid,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
-
+import { Client, Account, Databases, Query, Storage } from "appwrite";
+import { databases } from "../services/appwrite";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldPlaySound: true,
-    shouldSetBadge: false,
+    shouldSetBadge: true,
   }),
 });
+
+const DATABASE_ID = process.env.EXPO_PUBLIC_DATABASE_ID;
+const NOTIFICATIONS_COLLECTION_ID = process.env.EXPO_PUBLIC_NOTIFICATIONS_COLLECTION_ID;
+
 const NotificationPrompt = ({ triggerManually = false, onClose }) => {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -43,19 +49,53 @@ const NotificationPrompt = ({ triggerManually = false, onClose }) => {
       const { status } = await Notifications.requestPermissionsAsync();
 
       if (status === "granted") {
-        Alert.alert("Success", "You will now receive notifications!");
-      } else {
-        Alert.alert("Permission Denied", "You won't receive notifications.");
-      }
+        ToastAndroid.show(
+          "Great! You'll get new Wallpaper Alerts!",
+          ToastAndroid.SHORT
+        );
 
-      const token = (await Notifications.getExpoPushTokenAsync()).data;
-      console.log("Push Token:", token);
+        // Get the push token
+        const token = (await Notifications.getExpoPushTokenAsync()).data;
+        console.log("Push Token:", token);
+
+        // Check if the token already exists in the Appwrite collection
+        const existingTokens = await databases.listDocuments(
+          DATABASE_ID, // Replace with your database ID
+          NOTIFICATIONS_COLLECTION_ID, // Replace with your collection ID
+          [Query.equal("token", token)] // Query to check for duplicate tokens
+        );
+
+        if (existingTokens.total === 0) {
+          // Save the token if it doesn't already exist
+          await databases.createDocument(
+            DATABASE_ID,
+            NOTIFICATIONS_COLLECTION_ID,
+            "unique()", // Use a unique ID for the document
+            {
+              token: token,
+            }
+          );
+
+          console.log("Push token saved in Appwrite successfully.");
+        } else {
+          console.log("Token already exists in Appwrite.");
+        }
+      } else {
+        ToastAndroid.show(
+          "Permission Denied. You won't receive notifications.",
+          ToastAndroid.SHORT
+        );
+      }
 
       await AsyncStorage.setItem("hasPromptedForNotifications", "true");
       setIsVisible(false);
       if (onClose) onClose(); // Notify parent component
     } catch (error) {
-      console.error("Error requesting notification permissions:", error);
+      console.error(
+        "Error requesting notification permissions or saving token:",
+        error
+      );
+      Alert.alert("Error", "Failed to save notification token.");
     }
   };
 

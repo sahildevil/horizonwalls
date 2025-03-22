@@ -12,6 +12,10 @@
       "supportsTablet": true
     },
     "android": {
+      "notification": {
+        "icon": "./assets/images/notification_icon.png",
+        "color": "#000000"
+      },
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/7.png",
