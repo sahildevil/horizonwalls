@@ -1,22 +1,23 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   StyleSheet,
   TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-  Platform,
-  ToastAndroid,
   Text,
+  Alert,
+  Platform,
+  ActivityIndicator,
+  ToastAndroid,
 } from "react-native";
+import * as FileSystem from "expo-file-system";
+import { Feather } from "@expo/vector-icons";
 import {
   RewardedAd,
+  RewardedAdEventType,
   TestIds,
   AdEventType,
-  RewardedAdEventType,
 } from "react-native-google-mobile-ads";
-import * as FileSystem from "expo-file-system";
-import * as MediaLibrary from "expo-media-library";
-import { Feather } from "@expo/vector-icons";
+import CustomAlert from "./CustomAlert";
+import * as MediaLibrary from "expo-media-library"; // Import the CustomAlert component
 
 // Utility functions remain the same
 const sanitizeFileName = (name) => {
@@ -261,7 +262,8 @@ const DownloadButton = ({
   const [downloadStarted, setDownloadStarted] = useState(false);
   const [adTimeout, setAdTimeout] = useState(null);
   const pendingDownloadRef = useRef(false);
-  const imageUrlRef = useRef(imageUrl); // Add this to track the current imageUrl
+  const imageUrlRef = useRef(imageUrl);
+  const [showAlert, setShowAlert] = useState(false); // Add state for showing the alert
 
   // Update ref when props change
   useEffect(() => {
@@ -283,10 +285,7 @@ const DownloadButton = ({
 
         // Make sure we're not already downloading
         if (!downloadStarted) {
-          // Trigger download directly - with a small delay to ensure state is settled
-          setTimeout(() => {
-            handleDownload();
-          }, 50);
+          handleDownload();
         }
       }
     },
@@ -308,12 +307,9 @@ const DownloadButton = ({
       if (pendingDownloadRef.current && !downloadStarted) {
         console.log("Showing ad immediately after load");
         try {
-          newAd.show().catch((error) => {
-            console.error("Failed to show newly loaded ad:", error);
-            handleAdError(error);
-          });
+          newAd.show();
         } catch (error) {
-          console.error("Exception when showing newly loaded ad:", error);
+          console.error("Error showing ad:", error);
           handleAdError(error);
         }
       }
@@ -412,24 +408,32 @@ const DownloadButton = ({
       console.log("Showing preloaded ad from parent component");
       try {
         await preloadedAd.show();
-        return true; // Ad shown successfully
+        return true;
       } catch (error) {
         console.error("Error showing preloaded ad:", error);
-        // Handle preloaded ad error with the same handler
         handleAdError(error);
-        return false; // Failed to show preloaded ad
+        return false;
       }
     }
     return false; // No preloaded ad available
   }, [isPreloadedAdLoaded, preloadedAd, handleAdError]);
 
+  // Modified handlePress to show the CustomAlert first
   const handlePress = useCallback(() => {
     if (isAdLoading || downloadStarted) {
       console.log("Button already in progress, ignoring press");
       return;
     }
 
-    console.log("Download button pressed");
+    console.log("Download button pressed, showing alert");
+    // Show the custom alert instead of starting the download process immediately
+    setShowAlert(true);
+  }, [isAdLoading, downloadStarted]);
+
+  // New function to handle the confirmation from the alert
+  const handleAlertConfirm = useCallback(() => {
+    console.log("Alert confirmed, starting ad process");
+    setShowAlert(false); // Hide the alert
 
     // Set the pending download flag
     pendingDownloadRef.current = true;
@@ -449,22 +453,15 @@ const DownloadButton = ({
     // Always try preloaded ad first
     showPreloadedAd().then((shown) => {
       if (!shown) {
-        console.log("No preloaded ad available, using local ad logic");
-        showAd().catch((error) => {
-          console.error("Error in showAd:", error);
-          handleAdError(error);
-        });
+        showAd();
       }
     });
   }, [
-    isAdLoading,
-    downloadStarted,
-    handleDownload,
-    showAd,
     setIsAdLoading,
     setDownloadPending,
     showPreloadedAd,
-    handleAdError,
+    showAd,
+    handleDownload,
   ]);
 
   // Clear timeout on unmount
@@ -506,14 +503,16 @@ const DownloadButton = ({
         AdEventType.CLOSED,
         () => {
           console.log("Preloaded ad closed");
-          if (onAdClosed) onAdClosed();
+          if (onAdClosed) {
+            onAdClosed();
+          }
         }
       );
 
       const unsubscribeError = preloadedAd.addAdEventListener(
         AdEventType.ERROR,
         (error) => {
-          console.log("Preloaded ad error:", error);
+          console.error("Preloaded ad error:", error);
           handleAdError(error);
         }
       );
@@ -542,16 +541,11 @@ const DownloadButton = ({
       !downloadStarted &&
       pendingDownloadRef.current
     ) {
-      console.log(
-        "Ad was already loaded when button was pressed, showing it now"
-      );
+      console.log("Ad already loaded, showing immediately");
       try {
-        currentAd.show().catch((error) => {
-          console.error("Failed to show already-loaded ad:", error);
-          handleAdError(error);
-        });
+        currentAd.show();
       } catch (error) {
-        console.error("Exception when showing already-loaded ad:", error);
+        console.error("Error showing loaded ad:", error);
         handleAdError(error);
       }
     }
@@ -565,18 +559,27 @@ const DownloadButton = ({
   ]);
 
   return (
-    <TouchableOpacity
-      onPress={handlePress}
-      disabled={isAdLoading || downloadStarted}
-      style={styles.downloadButton}
-    >
-      {isAdLoading || downloadStarted ? (
-        <ActivityIndicator size="small" color="white" />
-      ) : (
-        <Feather name="download" size={24} color="white" />
-      )}
-      <Text style={styles.toolbarButtonLabel}>Save</Text>
-    </TouchableOpacity>
+    <>
+      <TouchableOpacity
+        onPress={handlePress}
+        disabled={isAdLoading || downloadStarted}
+        style={styles.downloadButton}
+      >
+        {isAdLoading || downloadStarted ? (
+          <ActivityIndicator size="small" color="white" />
+        ) : (
+          <Feather name="download" size={24} color="white" />
+        )}
+        <Text style={styles.toolbarButtonLabel}>Save</Text>
+      </TouchableOpacity>
+
+      {/* Add CustomAlert component */}
+      <CustomAlert
+        visible={showAlert}
+        onClose={() => setShowAlert(false)}
+        onConfirm={handleAlertConfirm}
+      />
+    </>
   );
 };
 
