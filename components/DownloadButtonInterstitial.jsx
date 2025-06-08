@@ -37,16 +37,19 @@ const useInterstitialAd = (adRequestOptions = {}) => {
   const [isAdLoading, setIsAdLoading] = useState(false);
   const [currentAd, setCurrentAd] = useState(null);
   const [adError, setAdError] = useState(null);
+  const [shouldTriggerDownload, setShouldTriggerDownload] = useState(false);
+  
+  // Use refs to avoid dependency issues
+  const pendingShowRef = useRef(false);
+  const downloadCallbackRef = useRef(null);
 
-  // Use your production ad unit ID for interstitial ads
-  // const adUnitId = __DEV__
-  //   ? TestIds.INTERSTITIAL
-  //   : "ca-app-pub-4677981033286236/9404173109"; // Replace with your actual interstitial ad unit ID
   const adUnitId = TestIds.INTERSTITIAL;
+
   const createAndLoadAd = useCallback(() => {
     console.log("Creating interstitial ad...");
     setIsAdLoading(true);
     setAdError(null);
+    setShouldTriggerDownload(false);
 
     const newAd = InterstitialAd.createForAdRequest(adUnitId, {
       requestNonPersonalizedAdsOnly:
@@ -56,22 +59,44 @@ const useInterstitialAd = (adRequestOptions = {}) => {
 
     const unsubscribeLoaded = newAd.addAdEventListener(
       AdEventType.LOADED,
-      () => {
+      async () => {
         console.log("Interstitial ad loaded successfully");
         setLoaded(true);
         setCurrentAd(newAd);
         setIsAdLoading(false);
         setAdError(null);
+
+        // If there's a pending show request, show the ad immediately
+        if (pendingShowRef.current) {
+          console.log("Showing ad immediately after load (was pending)");
+          pendingShowRef.current = false;
+          try {
+            await newAd.show();
+          } catch (error) {
+            console.error("Error showing pending ad:", error);
+            setAdError(error.message);
+            setShouldTriggerDownload(true);
+          }
+        }
       }
     );
 
     const unsubscribeClosed = newAd.addAdEventListener(
       AdEventType.CLOSED,
       () => {
-        console.log("Interstitial ad closed");
+        console.log("Interstitial ad closed - triggering download");
         setLoaded(false);
         setCurrentAd(null);
-        // Don't automatically create a new ad after closing
+        pendingShowRef.current = false;
+        setShouldTriggerDownload(true);
+        
+        // Call the download callback if it exists
+        if (downloadCallbackRef.current) {
+          console.log("Calling download callback after ad closed");
+          const callback = downloadCallbackRef.current;
+          downloadCallbackRef.current = null;
+          callback();
+        }
       }
     );
 
@@ -83,6 +108,16 @@ const useInterstitialAd = (adRequestOptions = {}) => {
         setIsAdLoading(false);
         setLoaded(false);
         setCurrentAd(null);
+        pendingShowRef.current = false;
+        setShouldTriggerDownload(true);
+        
+        // Call the download callback on error too
+        if (downloadCallbackRef.current) {
+          console.log("Calling download callback after ad error");
+          const callback = downloadCallbackRef.current;
+          downloadCallbackRef.current = null;
+          callback();
+        }
       }
     );
 
@@ -94,30 +129,50 @@ const useInterstitialAd = (adRequestOptions = {}) => {
       unsubscribeClosed();
       unsubscribeError();
     };
-  }, [adUnitId, adRequestOptions]);
+  }, [adUnitId, adRequestOptions]); // Removed pendingShow from dependencies
 
-  const showAd = useCallback(async () => {
+  const showAdWithCallback = useCallback(async (downloadCallback) => {
+    setShouldTriggerDownload(false);
+    downloadCallbackRef.current = downloadCallback;
+    
     if (loaded && currentAd) {
       try {
         console.log("Showing interstitial ad");
         await currentAd.show();
-        return true; // Ad shown successfully
+        return { success: true, showedImmediately: true };
       } catch (error) {
         console.error("Error showing interstitial ad:", error);
         setAdError(error.message);
-        return false; // Failed to show ad
+        setShouldTriggerDownload(true);
+        // Call callback immediately on error
+        if (downloadCallback) {
+          downloadCallback();
+          downloadCallbackRef.current = null;
+        }
+        return { success: false, showedImmediately: false };
       }
+    } else if (isAdLoading) {
+      // Ad is currently loading, set pending flag
+      console.log("Ad is loading, setting pending show");
+      pendingShowRef.current = true;
+      return { success: true, showedImmediately: false };
     } else {
-      console.log("No interstitial ad loaded");
-      return false; // No ad to show
+      // No ad loaded and none loading, try to load one
+      console.log("No ad available, creating new ad");
+      pendingShowRef.current = true;
+      createAndLoadAd();
+      return { success: true, showedImmediately: false };
     }
-  }, [loaded, currentAd]);
+  }, [loaded, currentAd, isAdLoading, createAndLoadAd]);
 
   const resetAdState = useCallback(() => {
     setLoaded(false);
     setCurrentAd(null);
     setIsAdLoading(false);
     setAdError(null);
+    setShouldTriggerDownload(false);
+    pendingShowRef.current = false;
+    downloadCallbackRef.current = null;
   }, []);
 
   // Load initial ad
@@ -129,10 +184,11 @@ const useInterstitialAd = (adRequestOptions = {}) => {
   return {
     loaded,
     isAdLoading,
-    showAd,
+    showAdWithCallback,
     resetAdState,
     createAndLoadAd,
     adError,
+    shouldTriggerDownload,
   };
 };
 
@@ -143,15 +199,16 @@ const DownloadButtonInterstitial = ({
   vertical = false 
 }) => {
   const [downloadStarted, setDownloadStarted] = useState(false);
-  const [adShown, setAdShown] = useState(false);
+  const [waitingForAd, setWaitingForAd] = useState(false);
   
   const {
     loaded,
     isAdLoading,
-    showAd,
+    showAdWithCallback,
     resetAdState,
     createAndLoadAd,
     adError,
+    shouldTriggerDownload,
   } = useInterstitialAd(adRequestOptions);
 
   const handleDownload = useCallback(async () => {
@@ -168,6 +225,7 @@ const DownloadButtonInterstitial = ({
 
     try {
       setDownloadStarted(true);
+      setWaitingForAd(false);
       console.log("Starting download process...");
 
       const extension = getFileExtension(imageUrl);
@@ -214,7 +272,6 @@ const DownloadButtonInterstitial = ({
       );
     } finally {
       setDownloadStarted(false);
-      setAdShown(false);
       resetAdState();
       // Load a new ad for next time
       setTimeout(() => {
@@ -224,64 +281,78 @@ const DownloadButtonInterstitial = ({
   }, [imageUrl, wallpaperName, downloadStarted, resetAdState, createAndLoadAd]);
 
   const handlePress = useCallback(async () => {
-    if (downloadStarted || isAdLoading) {
-      console.log("Download or ad loading in progress, ignoring press");
+    if (downloadStarted) {
+      console.log("Download in progress, ignoring press");
       return;
     }
 
     console.log("Download button pressed");
+    setWaitingForAd(true);
 
-    // Try to show the ad first
-    const adWasShown = await showAd();
+    // Try to show the ad with download callback
+    const result = await showAdWithCallback(handleDownload);
     
-    if (adWasShown) {
-      console.log("Interstitial ad shown, will download after ad closes");
-      setAdShown(true);
-      // Download will be triggered when ad closes (handled in useEffect below)
-    } else {
-      // No ad available or failed to show, proceed with download immediately
-      console.log("No ad available or failed to show, proceeding with download");
-      if (adError) {
-        console.log("Ad error occurred:", adError);
-        ToastAndroid.show("Loading download...", ToastAndroid.SHORT);
+    if (result.success) {
+      if (result.showedImmediately) {
+        console.log("Interstitial ad shown immediately, download will happen after ad closes");
+        setWaitingForAd(false);
+      } else {
+        console.log("Ad will show when ready, keeping loading state");
+        // Keep waitingForAd true until ad shows or fails
       }
-      handleDownload();
+    } else {
+      // Failed to show ad, download should have been called already in the callback
+      console.log("Failed to show ad, download should have been triggered");
+      setWaitingForAd(false);
     }
-  }, [downloadStarted, isAdLoading, showAd, handleDownload, adError]);
+  }, [downloadStarted, showAdWithCallback, handleDownload]);
 
-  // Handle download after ad is closed
+  // Handle when pending ad finally loads and shows
   useEffect(() => {
-    if (adShown && !loaded && !downloadStarted) {
-      console.log("Ad was closed, starting download");
+    if (waitingForAd && loaded && !isAdLoading) {
+      console.log("Ad loaded while waiting, should show automatically");
+      setWaitingForAd(false);
+    }
+  }, [waitingForAd, loaded, isAdLoading]);
+
+  // Handle ad errors while waiting
+  useEffect(() => {
+    if (waitingForAd && adError && !isAdLoading) {
+      console.log("Ad error while waiting, proceeding with download");
+      setWaitingForAd(false);
+      ToastAndroid.show("Loading download...", ToastAndroid.SHORT);
       handleDownload();
     }
-  }, [adShown, loaded, downloadStarted, handleDownload]);
+  }, [waitingForAd, adError, isAdLoading, handleDownload]);
 
   // Auto-retry loading ad if it failed
   useEffect(() => {
-    if (adError && !loaded && !isAdLoading) {
-      console.log("Ad failed to load, retrying in 2 seconds...");
+    if (adError && !loaded && !isAdLoading && !waitingForAd) {
+      console.log("Ad failed to load, retrying in 3 seconds...");
       const timer = setTimeout(() => {
         createAndLoadAd();
-      }, 2000);
+      }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [adError, loaded, isAdLoading, createAndLoadAd]);
+  }, [adError, loaded, isAdLoading, waitingForAd, createAndLoadAd]);
+
+  // Determine if we should show loading state
+  const showLoadingState = downloadStarted || waitingForAd;
 
   if (vertical) {
     return (
       <TouchableOpacity
         onPress={handlePress}
-        disabled={downloadStarted}
+        disabled={showLoadingState}
         style={styles.verticalButton}
       >
-        {downloadStarted ? (
+        {showLoadingState ? (
           <ActivityIndicator size="small" color="white" />
         ) : (
           <Feather name="download" size={26} color="white" />
         )}
         <Text style={styles.toolbarButtonLabel}>
-          {downloadStarted ? "Saving..." : "Save"}
+          {downloadStarted ? "Saving..." : waitingForAd ? "Loading..." : "Save"}
         </Text>
       </TouchableOpacity>
     );
@@ -290,10 +361,10 @@ const DownloadButtonInterstitial = ({
   return (
     <TouchableOpacity
       onPress={handlePress}
-      disabled={downloadStarted}
+      disabled={showLoadingState}
       style={styles.downloadButton}
     >
-      {downloadStarted ? (
+      {showLoadingState ? (
         <ActivityIndicator size="small" color="white" />
       ) : (
         <Feather name="download" size={24} color="white" />
