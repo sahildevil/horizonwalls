@@ -23,7 +23,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import ConsentManager from "../../components/ConsentManager";
 import DownloadButton from "../../components/DownloadButton";
 import { wallpaperService } from "../../services/appwrite";
-
+import DownloadButtonInterstitial from "../../components/DownloadButtonInterstitial";
 // Get the true screen dimensions including notches and status bar
 const windowDimensions = Dimensions.get("window");
 const screenDimensions = Dimensions.get("screen");
@@ -689,11 +689,11 @@ const Screens = () => {
           </TouchableOpacity> */}
 
           <View style={styles.toolbarButton}>
-            <DownloadButton
+            <DownloadButtonInterstitial
               imageUrl={item.imageUrl}
               wallpaperName={item.title}
               adRequestOptions={getAdRequestOptions()}
-              vertical={true} // Add this prop to support vertical layout
+              vertical={true}
             />
           </View>
 
@@ -715,7 +715,6 @@ const Screens = () => {
             <Ionicons name="chevron-up" size={24} color="white" />
           )}
           <Text style={styles.hintText}>{getNavigationHintText()}</Text>
-
         </View>
       </View>
     );

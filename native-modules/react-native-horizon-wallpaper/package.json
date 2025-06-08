@@ -1,0 +1,21 @@
+{
+  "name": "react-native-horizon-wallpaper",
+  "version": "1.0.0",
+  "description": "Direct wallpaper setting for Horizon Walls app",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "react-native",
+    "wallpaper",
+    "android",
+    "ios"
+  ],
+  "author": "Horizon Walls Team",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  }
+}
