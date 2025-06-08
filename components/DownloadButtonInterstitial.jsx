@@ -43,7 +43,7 @@ const useInterstitialAd = (adRequestOptions = {}) => {
   const pendingShowRef = useRef(false);
   const downloadCallbackRef = useRef(null);
 
-  const adUnitId = TestIds.INTERSTITIAL;
+  const adUnitId = 'ca-app-pub-4677981033286236/9404173109';
 
   const createAndLoadAd = useCallback(() => {
     console.log("Creating interstitial ad...");
